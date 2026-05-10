@@ -34,5 +34,21 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password')
         ]);
         $admin->assignRole('admin');
+
+        $faculty = User::factory()->create([
+            'name' => 'Dr. John Doe',
+            'email' => 'faculty@example.com',
+            'password' => bcrypt('password')
+        ]);
+        $faculty->assignRole('faculty');
+
+        \App\Models\FacultyProfile::create([
+            'user_id' => $faculty->id,
+            'department_id' => \App\Models\Department::first()->id,
+            'degree' => 'Ph.D. in Computer Science',
+            'specialization' => 'Artificial Intelligence',
+            'employment_type' => 'full-time',
+            'status' => 'pending',
+        ]);
     }
 }

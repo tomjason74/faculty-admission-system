@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Admission Dashboard Prototype</title>
+    <!-- Google Fonts: Cinzel & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons (Alternative to Lucide for quick CDN prototype) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Cinzel', 'serif'],
+                    },
+                    colors: {
+                        maroon: {
+                            900: '#5c1322',
+                            800: '#7A1A2E', // Premium Maroon
+                            700: '#942038',
+                        },
+                        gold: {
+                            500: '#C5A059', // Metallic Gold
+                            400: '#d4b472',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-maroon-800 text-slate-50 flex flex-col justify-between shadow-xl z-20">
+        <div>
+            <!-- Logo Area -->
+            <div class="h-16 flex items-center px-6 border-b border-maroon-700">
+                <i class="ph ph-buildings text-gold-500 text-2xl mr-3"></i>
+                <span class="font-serif font-bold text-lg tracking-wide text-white">PUP Portal</span>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-4 space-y-1">
+                <!-- Active Link -->
+                <a href="#" class="flex items-center px-4 py-3 bg-maroon-900 rounded-lg text-gold-500 transition-colors">
+                    <i class="ph ph-squares-four text-xl mr-3"></i>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-3 hover:bg-maroon-700 rounded-lg text-slate-200 transition-colors">
+                    <i class="ph ph-user-circle text-xl mr-3"></i>
+                    <span class="font-medium">My Profile</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-3 hover:bg-maroon-700 rounded-lg text-slate-200 transition-colors">
+                    <i class="ph ph-folder-open text-xl mr-3"></i>
+                    <span class="font-medium">Documents</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-3 hover:bg-maroon-700 rounded-lg text-slate-200 transition-colors">
+                    <i class="ph ph-file-text text-xl mr-3"></i>
+                    <span class="font-medium">Applications</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- User Mini Profile -->
+        <div class="p-4 border-t border-maroon-700">
+            <div class="flex items-center px-4 py-2 hover:bg-maroon-700 rounded-lg cursor-pointer transition-colors">
+                <div class="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-maroon-800 font-bold mr-3">
+                    JD
+                </div>
+                <div>
+                    <p class="text-sm font-medium">John Doe</p>
+                    <p class="text-xs text-slate-400">Faculty Applicant</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Top Navbar -->
+        <header class="h-16 bg-white shadow-sm flex items-center justify-between px-8 z-10">
+            <div class="flex items-center text-slate-500 bg-slate-100 px-3 py-2 rounded-lg w-64 focus-within:ring-2 focus-within:ring-gold-500 focus-within:bg-white transition-all">
+                <i class="ph ph-magnifying-glass mr-2"></i>
+                <input type="text" placeholder="Search..." class="bg-transparent border-none outline-none text-sm w-full">
+            </div>
+            <div class="flex items-center space-x-4 text-slate-500">
+                <button class="hover:text-maroon-800 transition-colors relative">
+                    <i class="ph ph-bell text-xl"></i>
+                    <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="flex-1 overflow-y-auto p-8">
+            
+            <!-- Welcome Header using Cinzel -->
+            <div class="mb-8">
+                <h1 class="font-serif text-3xl font-bold text-slate-800">Welcome back, Dr. Doe</h1>
+                <p class="text-slate-500 mt-1">Here is the status of your faculty admission application.</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Card 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-t-4 border-t-maroon-800">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">Profile Completion</p>
+                            <h3 class="text-2xl font-bold text-slate-800 mt-1">85%</h3>
+                        </div>
+                        <div class="p-3 bg-maroon-50 rounded-lg text-maroon-800">
+                            <i class="ph ph-user-check text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-t-4 border-t-gold-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">Documents Uploaded</p>
+                            <h3 class="text-2xl font-bold text-slate-800 mt-1">4/5</h3>
+                        </div>
+                        <div class="p-3 bg-yellow-50 rounded-lg text-gold-500">
+                            <i class="ph ph-files text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-t-4 border-t-slate-800">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">Application Status</p>
+                            <h3 class="text-xl font-bold text-slate-800 mt-1">Under Review</h3>
+                        </div>
+                        <div class="p-3 bg-slate-100 rounded-lg text-slate-600">
+                            <i class="ph ph-clock text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity / Action Area -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h2 class="font-serif font-bold text-lg text-slate-800">Required Actions</h2>
+                    <button class="text-sm font-medium text-maroon-800 hover:text-maroon-700">View All</button>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center justify-between p-4 border border-dashed border-slate-300 rounded-lg bg-slate-50">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-white shadow-sm rounded-lg text-maroon-800 mr-4">
+                                <i class="ph ph-upload-simple text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-slate-800">Upload Transcript of Records</h4>
+                                <p class="text-sm text-slate-500 mt-1">Please provide your official Master's Degree transcript.</p>
+                            </div>
+                        </div>
+                        <button class="px-4 py-2 bg-maroon-800 hover:bg-maroon-900 text-white font-medium rounded-lg shadow-sm transition-colors">
+                            Upload Document
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+</html>

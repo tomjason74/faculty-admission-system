@@ -4,10 +4,10 @@ Implement the ability for faculty to upload end-of-term class records (syllabi, 
 
 ## Acceptance criteria
 
-- [ ] Faculty UI updated to allow uploading class records with additional form fields for `semester` and `course_code`.
-- [ ] Backend securely attaches these files to the profile under the `class_records` collection, saving the metadata to `custom_properties`.
-- [ ] Admin Dashboard updated with a view to list, filter, and download class records for any faculty member.
-- [ ] Pest Feature tests verify that the custom properties are correctly saved and queryable.
+- [x] Faculty UI updated to allow uploading class records with additional form fields for `semester` and `course_code`.
+- [x] Backend securely attaches these files to the profile under the `class_records` collection, saving the metadata to `custom_properties`.
+- [x] Admin Dashboard updated with a view to list, filter, and download class records for any faculty member.
+- [x] Pest Feature tests verify that the custom properties are correctly saved and queryable.
 
 ## Blocked by
 

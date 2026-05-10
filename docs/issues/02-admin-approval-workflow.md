@@ -4,12 +4,12 @@ Implement the Admin Dashboard and the approval workflow. Admins should be able t
 
 ## Acceptance criteria
 
-- [ ] Admin login functionality implemented.
-- [ ] Admin Dashboard UI created showing a list/table of pending applications.
-- [ ] API endpoint created to approve or reject a specific application.
-- [ ] RBAC middleware applied so only users with the `admin` role can access the dashboard or hit the approval endpoint.
-- [ ] Approving an application sets the profile status to `approved` and assigns the `faculty` role.
-- [ ] Pest Feature tests verify that non-admins get a 403 Forbidden when trying to access the dashboard or approval endpoints.
+- [x] Admin login functionality implemented.
+- [x] Admin Dashboard UI created showing a list/table of pending applications.
+- [x] API endpoint created to approve or reject a specific application.
+- [x] RBAC middleware applied so only users with the `admin` role can access the dashboard or hit the approval endpoint.
+- [x] Approving an application sets the profile status to `approved` and assigns the `faculty` role.
+- [x] Pest Feature tests verify that non-admins get a 403 Forbidden when trying to access the dashboard or approval endpoints.
 
 ## Blocked by
 

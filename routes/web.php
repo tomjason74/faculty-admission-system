@@ -27,4 +27,21 @@ Route::middleware('auth')->group(function () {
 Route::get('/apply', [\App\Http\Controllers\ApplicationController::class, 'create'])->name('apply.create');
 Route::post('/apply', [\App\Http\Controllers\ApplicationController::class, 'store'])->name('apply.store');
 
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\ApplicationController::class, 'index'])->name('dashboard');
+    Route::post('/applications/{facultyProfile}/approve', [\App\Http\Controllers\Admin\ApplicationController::class, 'approve'])->name('applications.approve');
+    Route::post('/applications/{facultyProfile}/reject', [\App\Http\Controllers\Admin\ApplicationController::class, 'reject'])->name('applications.reject');
+    Route::post('/faculty', [\App\Http\Controllers\Admin\ApplicationController::class, 'storeFaculty'])->name('faculty.store');
+});
+
+Route::middleware(['auth', 'role:faculty'])->prefix('faculty')->name('faculty.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Faculty\DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/documents', [\App\Http\Controllers\Faculty\DashboardController::class, 'storeDocument'])->name('documents.store');
+    Route::post('/class-records', [\App\Http\Controllers\Faculty\DashboardController::class, 'storeClassRecord'])->name('class_records.store');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/api/documents/{media}', [\App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
+});
+
 require __DIR__.'/auth.php';

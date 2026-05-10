@@ -1,176 +1,158 @@
-import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
-import NavLink from '@/Components/NavLink';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
+import { LayoutDashboard, FolderOpen, Menu, Bell, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useState } from 'react';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-    const [showingNavigationDropdown, setShowingNavigationDropdown] =
-        useState(false);
+    // Dynamic Navigation links based on role
+    const getNavLinks = () => {
+        let links = [];
+        if (user?.roles?.includes('admin')) {
+            links = [
+                { name: 'Dashboard', href: route('admin.dashboard'), active: route().current('admin.dashboard'), icon: LayoutDashboard },
+            ];
+        } else if (user?.roles?.includes('faculty')) {
+            links = [
+                { name: 'Dashboard', href: route('faculty.dashboard'), active: route().current('faculty.dashboard'), icon: LayoutDashboard },
+                { name: 'Documents', href: '#', active: false, icon: FolderOpen }, // Placeholder
+            ];
+        } else {
+            links = [
+                { name: 'Dashboard', href: route('dashboard'), active: route().current('dashboard'), icon: LayoutDashboard },
+            ];
+        }
+        return links;
+    };
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <nav className="border-b border-gray-100 bg-white">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 justify-between">
-                        <div className="flex">
-                            <div className="flex shrink-0 items-center">
-                                <Link href="/">
-                                    <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
-                                </Link>
-                            </div>
-
-                            <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    href={route('dashboard')}
-                                    active={route().current('dashboard')}
-                                >
-                                    Dashboard
-                                </NavLink>
-                            </div>
-                        </div>
-
-                        <div className="hidden sm:ms-6 sm:flex sm:items-center">
-                            <div className="relative ms-3">
-                                <Dropdown>
-                                    <Dropdown.Trigger>
-                                        <span className="inline-flex rounded-md">
-                                            <button
-                                                type="button"
-                                                className="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
-                                            >
-                                                {user.name}
-
-                                                <svg
-                                                    className="-me-0.5 ms-2 h-4 w-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </Dropdown.Trigger>
-
-                                    <Dropdown.Content>
-                                        <Dropdown.Link
-                                            href={route('profile.edit')}
-                                        >
-                                            Profile
-                                        </Dropdown.Link>
-                                        <Dropdown.Link
-                                            href={route('logout')}
-                                            method="post"
-                                            as="button"
-                                        >
-                                            Log Out
-                                        </Dropdown.Link>
-                                    </Dropdown.Content>
-                                </Dropdown>
-                            </div>
-                        </div>
-
-                        <div className="-me-2 flex items-center sm:hidden">
-                            <button
-                                onClick={() =>
-                                    setShowingNavigationDropdown(
-                                        (previousState) => !previousState,
-                                    )
-                                }
-                                className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
-                            >
-                                <svg
-                                    className="h-6 w-6"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        className={
-                                            !showingNavigationDropdown
-                                                ? 'inline-flex'
-                                                : 'hidden'
-                                        }
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                    <path
-                                        className={
-                                            showingNavigationDropdown
-                                                ? 'inline-flex'
-                                                : 'hidden'
-                                        }
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    className={
-                        (showingNavigationDropdown ? 'block' : 'hidden') +
-                        ' sm:hidden'
-                    }
-                >
-                    <div className="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            href={route('dashboard')}
-                            active={route().current('dashboard')}
-                        >
-                            Dashboard
-                        </ResponsiveNavLink>
-                    </div>
-
-                    <div className="border-t border-gray-200 pb-1 pt-4">
-                        <div className="px-4">
-                            <div className="text-base font-medium text-gray-800">
-                                {user.name}
-                            </div>
-                            <div className="text-sm font-medium text-gray-500">
-                                {user.email}
-                            </div>
-                        </div>
-
-                        <div className="mt-3 space-y-1">
-                            <ResponsiveNavLink href={route('profile.edit')}>
-                                Profile
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                method="post"
-                                href={route('logout')}
-                                as="button"
-                            >
-                                Log Out
-                            </ResponsiveNavLink>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
-            {header && (
-                <header className="bg-white shadow">
-                    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                        {header}
-                    </div>
-                </header>
+        <div className="flex h-screen overflow-hidden bg-slate-50 font-sans text-slate-800 antialiased">
+            
+            {/* Mobile Sidebar Overlay */}
+            {mobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 z-20 bg-slate-900/50 lg:hidden"
+                    onClick={() => setMobileMenuOpen(false)}
+                />
             )}
 
-            <main>{children}</main>
+            {/* Sidebar */}
+            <aside className={`fixed inset-y-0 left-0 z-30 transform bg-maroon-800 text-slate-50 shadow-xl transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col justify-between`}>
+                <div>
+                    {/* Logo Area */}
+                    <div className={`flex h-16 items-center border-b border-maroon-700 transition-all ${sidebarCollapsed ? 'justify-center px-0' : 'px-6'}`}>
+                        <Link href={getNavLinks()[0]?.href || '/'} className="flex items-center">
+                            <img src="/images/pup-logo.png" alt="PUP Logo" className={`h-8 w-auto ${sidebarCollapsed ? '' : 'mr-2'}`} />
+                            {!sidebarCollapsed && (
+                                <div className="leading-tight">
+                                    <span className="block font-serif font-bold text-sm tracking-wide text-white">PUP Portal</span>
+                                    <span className="block text-[9px] text-gold-400 font-medium tracking-widest uppercase">Faculty System</span>
+                                </div>
+                            )}
+                        </Link>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <nav className="p-4 space-y-2">
+                        {getNavLinks().map((link) => (
+                            <Link
+                                key={link.name}
+                                href={link.href}
+                                className={`flex items-center rounded-lg transition-colors ${
+                                    link.active 
+                                        ? 'bg-maroon-900 text-gold-500 font-medium' 
+                                        : 'hover:bg-maroon-700 text-slate-200'
+                                } ${sidebarCollapsed ? 'justify-center py-3' : 'px-4 py-3'}`}
+                                title={sidebarCollapsed ? link.name : ''}
+                            >
+                                <link.icon className={`h-5 w-5 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+                                {!sidebarCollapsed && <span>{link.name}</span>}
+                            </Link>
+                        ))}
+                    </nav>
+                </div>
+
+                {/* User Mini Profile (Static display on sidebar) */}
+                <div className={`p-4 border-t border-maroon-700 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+                    <div className="flex items-center w-full">
+                        <div className="h-8 w-8 rounded-full bg-slate-300 flex items-center justify-center text-maroon-800 font-bold shrink-0 uppercase">
+                            {user.name.substring(0, 2)}
+                        </div>
+                        {!sidebarCollapsed && (
+                            <div className="truncate text-left ml-3">
+                                <p className="text-sm font-medium truncate">{user.name}</p>
+                                <p className="text-xs text-slate-300 truncate">{user.email}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <div className="flex flex-col flex-1 overflow-hidden w-full">
+                
+                {/* Top Navbar */}
+                <header className="flex h-16 items-center justify-between bg-white px-4 sm:px-8 shadow-sm z-10 shrink-0">
+                    <div className="flex items-center">
+                        <button 
+                            onClick={() => setMobileMenuOpen(true)}
+                            className="mr-4 text-slate-500 hover:text-maroon-800 lg:hidden focus:outline-none"
+                        >
+                            <Menu className="h-6 w-6" />
+                        </button>
+                        
+                        {/* Desktop Sidebar Toggle */}
+                        <button
+                            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                            className="hidden lg:flex mr-6 text-slate-400 hover:text-maroon-800 focus:outline-none transition-colors"
+                        >
+                            {sidebarCollapsed ? <PanelLeftOpen className="h-6 w-6" /> : <PanelLeftClose className="h-6 w-6" />}
+                        </button>
+
+                        {/* Search Bar Removed */}
+                    </div>
+
+                    <div className="flex items-center space-x-6 text-slate-500">
+                        {/* Bell Notification Removed */}
+
+                        {/* User Dropdown moved to Top Navbar */}
+                        <div className="relative">
+                            <Dropdown>
+                                <Dropdown.Trigger>
+                                    <button className="flex items-center space-x-2 focus:outline-none hover:text-slate-800 transition-colors">
+                                        <div className="h-8 w-8 rounded-full bg-maroon-100 flex items-center justify-center text-maroon-800 font-bold uppercase border border-maroon-200">
+                                            {user.name.substring(0, 2)}
+                                        </div>
+                                    </button>
+                                </Dropdown.Trigger>
+                                <Dropdown.Content align="right" width="48">
+                                    <div className="px-4 py-2 border-b border-slate-100 block sm:hidden">
+                                        <p className="text-sm font-medium text-slate-800 truncate">{user.name}</p>
+                                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                                    </div>
+                                    <Dropdown.Link href={route('profile.edit')}>Profile Settings</Dropdown.Link>
+                                    <Dropdown.Link href={route('logout')} method="post" as="button">
+                                        Log Out
+                                    </Dropdown.Link>
+                                </Dropdown.Content>
+                            </Dropdown>
+                        </div>
+                    </div>
+                </header>
+
+                {/* Page Content */}
+                <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+                    {header && (
+                        <div className="mb-8">
+                            {header}
+                        </div>
+                    )}
+                    {children}
+                </main>
+            </div>
         </div>
     );
 }
