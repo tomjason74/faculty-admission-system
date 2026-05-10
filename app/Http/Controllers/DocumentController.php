@@ -31,4 +31,21 @@ class DocumentController extends Controller
             'Content-Type' => $media->mime_type,
         ]);
     }
+
+    public function destroy(Request $request, Media $media)
+    {
+        $user = $request->user();
+        $isAdmin = $user && $user->hasRole('admin');
+        
+        $profile = $user ? $user->facultyProfile : null;
+        $isOwner = $profile && $media->model_type === get_class($profile) && $media->model_id === $profile->id;
+
+        if (!$isAdmin && !$isOwner) {
+            abort(403, 'Unauthorized to delete this document.');
+        }
+
+        $media->delete();
+
+        return redirect()->back()->with('success', 'Document deleted successfully.');
+    }
 }

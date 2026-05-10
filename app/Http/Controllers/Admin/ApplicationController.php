@@ -21,13 +21,14 @@ class ApplicationController extends Controller
             ->get();
 
         $applications->transform(function ($app) {
-            $app->cv_url = $app->getFirstMediaUrl('cv');
+            $cvMedia = $app->getFirstMedia('cv');
+            $app->cv_url = $cvMedia ? route('documents.download', $cvMedia->id) : null;
             $app->documents = $this->mapDocuments($app);
             return $app;
         });
 
         $approvedFaculty = FacultyProfile::with(['user', 'department', 'media'])
-            ->where('status', 'approved')
+            ->whereIn('status', ['approved', 'inactive'])
             ->latest()
             ->get()
             ->map(function ($faculty) {
@@ -39,7 +40,8 @@ class ApplicationController extends Controller
                         'course_code' => $m->getCustomProperty('course_code'),
                     ];
                 });
-                $faculty->cv_url = $faculty->getFirstMediaUrl('cv');
+                $cvMedia = $faculty->getFirstMedia('cv');
+                $faculty->cv_url = $cvMedia ? route('documents.download', $cvMedia->id) : null;
                 $faculty->documents = $this->mapDocuments($faculty);
                 return $faculty;
             });
@@ -132,5 +134,37 @@ class ApplicationController extends Controller
             'email'    => $validated['email'],
             'password' => $tempPassword,
         ]);
+    }
+
+    /**
+     * Deactivate a faculty account (Offboarding)
+     */
+    public function deactivate(\Illuminate\Http\Request $request, FacultyProfile $facultyProfile)
+    {
+        $request->validate(['password' => 'required|string']);
+        
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, $request->user()->password)) {
+            return back()->withErrors(['password' => 'The provided password does not match our records.']);
+        }
+
+        $facultyProfile->update(['status' => 'inactive']);
+        
+        // Remove roles/permissions so they can't login
+        $facultyProfile->user->removeRole('faculty');
+
+        return redirect()->back()->with('success', 'Faculty account has been deactivated.');
+    }
+
+    /**
+     * Reactivate a faculty account
+     */
+    public function reactivate(FacultyProfile $facultyProfile)
+    {
+        $facultyProfile->update(['status' => 'approved']);
+        
+        // Restore login access
+        $facultyProfile->user->assignRole('faculty');
+
+        return redirect()->back()->with('success', 'Faculty account has been reactivated.');
     }
 }

@@ -3,8 +3,9 @@ import { Head, useForm } from '@inertiajs/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
-import { CheckCircle, Clock, UploadCloud, Download, FileArchive, Check, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, UploadCloud, Download, FileArchive, Check, AlertCircle, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { router } from '@inertiajs/react';
 
 export default function Dashboard({ profile, documents, classRecords }) {
     const collections = [
@@ -38,6 +39,14 @@ export default function Dashboard({ profile, documents, classRecords }) {
             onSuccess: () => classRecordForm.reset('semester', 'course_code', 'file'),
             forceFormData: true,
         });
+    };
+
+    const handleDeleteDocument = (id) => {
+        if (confirm('Are you sure you want to delete this document? You will need to upload a replacement if it is required.')) {
+            router.delete(route('documents.destroy', id), {
+                preserveScroll: true,
+            });
+        }
     };
 
     return (
@@ -234,9 +243,14 @@ export default function Dashboard({ profile, documents, classRecords }) {
                                             {documents[c.key]?.map(doc => (
                                                 <div key={doc.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0 last:pb-0">
                                                     <span className="text-sm text-slate-600 truncate mr-4">{doc.file_name}</span>
-                                                    <Button variant="ghost" size="sm" asChild className="h-8 text-maroon-800 hover:text-maroon-900 hover:bg-maroon-50">
-                                                        <a href={route('documents.download', doc.id)}><Download className="h-4 w-4 mr-2"/> Download</a>
-                                                    </Button>
+                                                    <div className="flex gap-2">
+                                                        <Button variant="ghost" size="sm" asChild className="h-8 text-maroon-800 hover:text-maroon-900 hover:bg-maroon-50">
+                                                            <a href={route('documents.download', doc.id)}><Download className="h-4 w-4 mr-2"/> Download</a>
+                                                        </Button>
+                                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteDocument(doc.id)} className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -268,9 +282,14 @@ export default function Dashboard({ profile, documents, classRecords }) {
                                                 <h4 className="font-bold text-slate-800">{record.course_code}</h4>
                                                 <p className="text-sm text-slate-500">{record.semester} • {record.file_name}</p>
                                             </div>
-                                            <Button variant="outline" size="sm" asChild className="border-slate-200 text-slate-600 hover:text-maroon-800 hover:border-maroon-800">
-                                                <a href={route('documents.download', record.id)}><Download className="h-4 w-4"/></a>
-                                            </Button>
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" size="sm" asChild className="border-slate-200 text-slate-600 hover:text-maroon-800 hover:border-maroon-800">
+                                                    <a href={route('documents.download', record.id)}><Download className="h-4 w-4"/></a>
+                                                </Button>
+                                                <Button variant="outline" size="sm" onClick={() => handleDeleteDocument(record.id)} className="border-red-200 text-red-600 hover:text-red-700 hover:border-red-600 hover:bg-red-50">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

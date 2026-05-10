@@ -32,6 +32,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/applications/{facultyProfile}/approve', [\App\Http\Controllers\Admin\ApplicationController::class, 'approve'])->name('applications.approve');
     Route::post('/applications/{facultyProfile}/reject', [\App\Http\Controllers\Admin\ApplicationController::class, 'reject'])->name('applications.reject');
     Route::post('/faculty', [\App\Http\Controllers\Admin\ApplicationController::class, 'storeFaculty'])->name('faculty.store');
+    Route::post('/faculty/{facultyProfile}/deactivate', [\App\Http\Controllers\Admin\ApplicationController::class, 'deactivate'])->name('faculty.deactivate');
+    Route::post('/faculty/{facultyProfile}/reactivate', [\App\Http\Controllers\Admin\ApplicationController::class, 'reactivate'])->name('faculty.reactivate');
 });
 
 Route::middleware(['auth', 'role:faculty'])->prefix('faculty')->name('faculty.')->group(function () {
@@ -42,6 +44,7 @@ Route::middleware(['auth', 'role:faculty'])->prefix('faculty')->name('faculty.')
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/api/documents/{media}', [\App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
+    Route::delete('/api/documents/{media}', [\App\Http\Controllers\DocumentController::class, 'destroy'])->name('documents.destroy');
 });
 
 require __DIR__.'/auth.php';

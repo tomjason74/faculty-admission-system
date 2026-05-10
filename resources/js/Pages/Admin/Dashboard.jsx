@@ -1,12 +1,12 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import {
     BadgeCheck, XCircle, FileText, Download, Search, Eye, X,
-    FolderOpen, FileCheck, FileMinus, User, UserPlus, KeyRound, Copy, Check
+    FolderOpen, FileCheck, FileMinus, User, UserPlus, KeyRound, Copy, Check, Trash2, ShieldAlert, CheckCircle2
 } from 'lucide-react';
 
 export default function Dashboard({ applications, approvedFaculty, departments }) {
@@ -19,8 +19,10 @@ export default function Dashboard({ applications, approvedFaculty, departments }
     const [selectedFaculty, setSelectedFaculty] = useState(null);
     const [activeTab, setActiveTab] = useState('info');
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
     const [showCredential, setShowCredential] = useState(!!credential);
     const [copiedField, setCopiedField] = useState(null);
+    const [directoryTab, setDirectoryTab] = useState('active');
 
     const addForm = useForm({
         name: '',
@@ -29,6 +31,10 @@ export default function Dashboard({ applications, approvedFaculty, departments }
         degree: '',
         specialization: '',
         employment_type: '',
+    });
+
+    const deactivateForm = useForm({
+        password: '',
     });
 
     const handleApprove = (id) => {
@@ -60,10 +66,58 @@ export default function Dashboard({ applications, approvedFaculty, departments }
         });
     };
 
+    const confirmDeactivate = (id) => {
+        setActionId(id);
+        setShowDeactivateModal(true);
+    };
+
+    const submitDeactivate = (e) => {
+        e.preventDefault();
+        deactivateForm.post(route('admin.faculty.deactivate', actionId), {
+            onSuccess: () => {
+                setShowDeactivateModal(false);
+                setSelectedFaculty(null);
+                setActionId(null);
+                deactivateForm.reset();
+            },
+            preserveScroll: true,
+        });
+    };
+
+    const handleReactivate = (id) => {
+        if (confirm('Are you sure you want to reactivate this faculty account? They will regain full login access.')) {
+            setActionId(id);
+            post(route('admin.faculty.reactivate', id), {
+                onFinish: () => setActionId(null),
+                onSuccess: () => setSelectedFaculty(null),
+            });
+        }
+    };
+
     const copyToClipboard = (text, field) => {
         navigator.clipboard.writeText(text);
         setCopiedField(field);
         setTimeout(() => setCopiedField(null), 2000);
+    };
+
+    const handleDeleteDocument = (id) => {
+        if (confirm('Are you sure you want to delete this document? The faculty member will need to upload a replacement.')) {
+            router.delete(route('documents.destroy', id), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Update selectedFaculty state to reflect the deleted document if it's currently open
+                    if (selectedFaculty) {
+                        setSelectedFaculty(prev => {
+                            const newDocs = { ...prev.documents };
+                            for (const key in newDocs) {
+                                newDocs[key] = newDocs[key].filter(d => d.id !== id);
+                            }
+                            return { ...prev, documents: newDocs };
+                        });
+                    }
+                }
+            });
+        }
     };
 
     const filterData = (data) => {
@@ -78,6 +132,10 @@ export default function Dashboard({ applications, approvedFaculty, departments }
 
     const filteredApplications = filterData(applications);
     const filteredApproved = filterData(approvedFaculty);
+    
+    const activeFacultyList = filteredApproved.filter(f => f.status === 'approved');
+    const archivedFacultyList = filteredApproved.filter(f => f.status === 'inactive');
+    const currentDirectoryList = directoryTab === 'active' ? activeFacultyList : archivedFacultyList;
 
     return (
         <AuthenticatedLayout
@@ -223,13 +281,31 @@ export default function Dashboard({ applications, approvedFaculty, departments }
                 {/* Approved Faculty Section */}
                 <Card className="border-slate-200 shadow-sm">
                     <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
-                        <CardTitle className="text-xl font-serif text-slate-800">Approved Faculty & Compliance</CardTitle>
-                        <CardDescription>Track onboarding compliance for active faculty members.</CardDescription>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <CardTitle className="text-xl font-serif text-slate-800">Faculty Directory & Compliance</CardTitle>
+                                <CardDescription>Track onboarding compliance for active and archived faculty.</CardDescription>
+                            </div>
+                            <div className="flex bg-slate-100 p-1 rounded-lg">
+                                <button
+                                    onClick={() => setDirectoryTab('active')}
+                                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${directoryTab === 'active' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Active
+                                </button>
+                                <button
+                                    onClick={() => setDirectoryTab('archived')}
+                                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${directoryTab === 'archived' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Archived
+                                </button>
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                        {filteredApproved.length === 0 ? (
+                        {currentDirectoryList.length === 0 ? (
                             <div className="p-8 text-center text-slate-500">
-                                <p>{searchQuery ? 'No approved faculty match your search.' : 'No approved faculty members found.'}</p>
+                                <p>{searchQuery ? 'No faculty match your search.' : `No ${directoryTab} faculty members found.`}</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
@@ -244,7 +320,7 @@ export default function Dashboard({ applications, approvedFaculty, departments }
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {filteredApproved.map((faculty) => (
+                                        {currentDirectoryList.map((faculty) => (
                                             <tr key={faculty.id} className="bg-white hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <div className="font-medium text-slate-900">{faculty.user.name}</div>
@@ -423,17 +499,29 @@ export default function Dashboard({ applications, approvedFaculty, departments }
                                         ].map(([label, value]) => (
                                             <div key={label} className="bg-slate-50 p-4 rounded-lg border border-slate-100">
                                                 <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{label}</span>
-                                                <span className={`font-medium text-slate-800 capitalize ${label === 'Status' ? (selectedFaculty.status === 'approved' ? 'text-green-700' : selectedFaculty.status === 'rejected' ? 'text-red-700' : 'text-amber-700') : ''}`}>{value || 'N/A'}</span>
+                                                <span className={`font-medium text-slate-800 capitalize ${label === 'Status' ? (selectedFaculty.status === 'approved' ? 'text-green-700' : selectedFaculty.status === 'rejected' ? 'text-red-700' : selectedFaculty.status === 'inactive' ? 'text-slate-500' : 'text-amber-700') : ''}`}>{value || 'N/A'}</span>
                                             </div>
                                         ))}
                                     </div>
-                                    {selectedFaculty.cv_url && (
-                                        <Button asChild className="bg-maroon-800 hover:bg-maroon-900 text-white w-full mt-2">
-                                            <a href={selectedFaculty.cv_url} target="_blank" rel="noreferrer">
-                                                <Download className="h-4 w-4 mr-2" /> Download CV
-                                            </a>
-                                        </Button>
-                                    )}
+                                    <div className="flex gap-2 mt-2">
+                                        {selectedFaculty.cv_url && (
+                                            <Button asChild className="bg-maroon-800 hover:bg-maroon-900 text-white flex-1">
+                                                <a href={selectedFaculty.cv_url} target="_blank" rel="noreferrer">
+                                                    <Download className="h-4 w-4 mr-2" /> Download CV
+                                                </a>
+                                            </Button>
+                                        )}
+                                        {selectedFaculty.status === 'approved' && (
+                                            <Button variant="outline" onClick={() => confirmDeactivate(selectedFaculty.id)} disabled={processing && actionId === selectedFaculty.id} className="border-red-200 text-red-700 hover:bg-red-50">
+                                                <XCircle className="h-4 w-4 mr-2" /> Deactivate Account
+                                            </Button>
+                                        )}
+                                        {selectedFaculty.status === 'inactive' && (
+                                            <Button variant="outline" onClick={() => handleReactivate(selectedFaculty.id)} disabled={processing && actionId === selectedFaculty.id} className="border-green-200 text-green-700 hover:bg-green-50">
+                                                <CheckCircle2 className="h-4 w-4 mr-2" /> Reactivate Account
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
@@ -463,11 +551,16 @@ export default function Dashboard({ applications, approvedFaculty, departments }
                                                                     <div className="bg-maroon-100 text-maroon-800 rounded p-1.5 shrink-0"><FileText className="h-4 w-4" /></div>
                                                                     <span className="text-sm text-slate-700 truncate font-medium">{doc.file_name}</span>
                                                                 </div>
-                                                                <Button variant="ghost" size="sm" asChild className="shrink-0 text-maroon-800 hover:bg-maroon-50">
-                                                                    <a href={route('documents.download', doc.id)} target="_blank" rel="noreferrer">
-                                                                        <Download className="h-4 w-4 mr-1.5" /> Download
-                                                                    </a>
-                                                                </Button>
+                                                                <div className="flex gap-2">
+                                                                    <Button variant="ghost" size="sm" asChild className="shrink-0 text-maroon-800 hover:bg-maroon-50">
+                                                                        <a href={route('documents.download', doc.id)} target="_blank" rel="noreferrer">
+                                                                            <Download className="h-4 w-4 mr-1.5" /> Download
+                                                                        </a>
+                                                                    </Button>
+                                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteDocument(doc.id)} className="shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50">
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -482,6 +575,55 @@ export default function Dashboard({ applications, approvedFaculty, departments }
                                 </div>
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Deactivate Password Confirmation Modal ── */}
+            {showDeactivateModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0 bg-red-50/50">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-red-100 text-red-600 p-2 rounded-full">
+                                    <ShieldAlert className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-serif font-bold text-slate-800">Security Confirmation</h3>
+                                </div>
+                            </div>
+                            <button onClick={() => { setShowDeactivateModal(false); deactivateForm.reset(); }} className="text-slate-400 hover:text-slate-700">
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+                        <form onSubmit={submitDeactivate} className="p-6 space-y-4">
+                            <p className="text-sm text-slate-600">
+                                You are about to deactivate this account. This will instantly revoke their login access.
+                                Please enter your <strong>Admin Password</strong> to confirm this action.
+                            </p>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Admin Password <span className="text-red-500">*</span></label>
+                                <Input
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    value={deactivateForm.data.password}
+                                    onChange={e => deactivateForm.setData('password', e.target.value)}
+                                    className="focus:ring-red-600 focus:border-red-600"
+                                    autoFocus
+                                />
+                                {deactivateForm.errors.password && <p className="text-xs text-red-500 mt-1.5 font-medium">{deactivateForm.errors.password}</p>}
+                            </div>
+                            <div className="pt-4 flex justify-end gap-3 shrink-0">
+                                <Button type="button" variant="outline" onClick={() => { setShowDeactivateModal(false); deactivateForm.reset(); }}>Cancel</Button>
+                                <Button
+                                    type="submit"
+                                    disabled={deactivateForm.processing}
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                    {deactivateForm.processing ? 'Verifying...' : 'Confirm Deactivation'}
+                                </Button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
