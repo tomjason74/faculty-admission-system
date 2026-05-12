@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import { UploadCloud, Check, ChevronRight, BookOpen, User, FileText, ArrowRight } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
+import Modal from '@/Components/Modal';
 
 export default function Apply({ departments }) {
     const [cvFileName, setCvFileName] = useState(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-    const { data, setData, post, processing, errors, recentlySuccessful, reset } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         // Personal Information
         name: '',
         email: '',
@@ -37,8 +39,14 @@ export default function Apply({ departments }) {
             onSuccess: () => {
                 reset();
                 setCvFileName(null);
+                setShowSuccessModal(true);
             },
         });
+    };
+
+    const handleCloseModal = () => {
+        setShowSuccessModal(false);
+        router.visit('/');
     };
 
     return (
@@ -75,17 +83,6 @@ export default function Apply({ departments }) {
             {/* Form */}
             <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
 
-                {recentlySuccessful && (
-                    <div className="mb-8 p-5 rounded-xl bg-green-50 text-green-800 border border-green-200 flex items-start gap-3">
-                        <div className="bg-green-100 rounded-full p-1.5 shrink-0 mt-0.5">
-                            <Check className="h-4 w-4 text-green-700" />
-                        </div>
-                        <div>
-                            <p className="font-semibold">Application submitted successfully!</p>
-                            <p className="text-sm mt-1 text-green-700">Thank you for applying. Our team will review your application and contact you via the email address you provided.</p>
-                        </div>
-                    </div>
-                )}
 
                 <form onSubmit={submit} encType="multipart/form-data">
                     <div className="space-y-8">
@@ -334,6 +331,27 @@ export default function Apply({ departments }) {
             <footer className="text-center text-xs text-slate-400 pb-10">
                 Polytechnic University of the Philippines &copy; {new Date().getFullYear()}
             </footer>
+
+            <Modal show={showSuccessModal} onClose={handleCloseModal} maxWidth="md">
+                <div className="p-6">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
+                        <Check className="h-6 w-6 text-green-600" aria-hidden="true" />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="text-lg font-semibold leading-6 text-slate-900 mb-2">Application Submitted!</h3>
+                        <p className="text-sm text-slate-500 mb-6">
+                            Thank you for applying. Our team will review your application and contact you via the email address you provided.
+                        </p>
+                        <Button
+                            type="button"
+                            onClick={handleCloseModal}
+                            className="w-full bg-maroon-800 hover:bg-maroon-900 text-white font-semibold py-2.5 rounded-lg transition-colors"
+                        >
+                            Return to Home
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

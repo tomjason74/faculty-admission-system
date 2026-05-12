@@ -9,7 +9,7 @@ import {
     FolderOpen, FileCheck, FileMinus, User, UserPlus, KeyRound, Copy, Check, Trash2, ShieldAlert, CheckCircle2
 } from 'lucide-react';
 
-export default function Dashboard({ applications, approvedFaculty, departments }) {
+export default function Dashboard({ applications, approvedFaculty, departments, stats }) {
     const { props } = usePage();
     const credential = props.credential ?? null;
 
@@ -212,6 +212,64 @@ export default function Dashboard({ applications, approvedFaculty, departments }
             )}
 
             <div className="space-y-8">
+
+                {/* Dashboard Stats */}
+                {stats && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Card className="border-slate-200 shadow-sm bg-white">
+                            <CardContent className="p-6">
+                                <div className="flex items-center space-x-4">
+                                    <div className="p-3 bg-blue-100 text-blue-700 rounded-full">
+                                        <FileText className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-500">Pending</p>
+                                        <h3 className="text-2xl font-bold text-slate-900">{stats.total_pending}</h3>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-slate-200 shadow-sm bg-white">
+                            <CardContent className="p-6">
+                                <div className="flex items-center space-x-4">
+                                    <div className="p-3 bg-green-100 text-green-700 rounded-full">
+                                        <BadgeCheck className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-500">Active Faculty</p>
+                                        <h3 className="text-2xl font-bold text-slate-900">{stats.total_approved}</h3>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-slate-200 shadow-sm bg-white">
+                            <CardContent className="p-6">
+                                <div className="flex items-center space-x-4">
+                                    <div className="p-3 bg-red-100 text-red-700 rounded-full">
+                                        <XCircle className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-500">Rejected</p>
+                                        <h3 className="text-2xl font-bold text-slate-900">{stats.total_rejected}</h3>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-slate-200 shadow-sm bg-white">
+                            <CardContent className="p-6">
+                                <div className="flex items-center space-x-4">
+                                    <div className="p-3 bg-slate-100 text-slate-700 rounded-full">
+                                        <User className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-500">Archived</p>
+                                        <h3 className="text-2xl font-bold text-slate-900">{stats.total_inactive}</h3>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
                 {/* Pending Applications Section */}
                 <Card className="border-slate-200 shadow-sm">

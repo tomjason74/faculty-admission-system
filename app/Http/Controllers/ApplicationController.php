@@ -10,6 +10,8 @@ use App\Models\FacultyProfile;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ApplicationReceived;
 
 class ApplicationController extends Controller
 {
@@ -55,6 +57,11 @@ class ApplicationController extends Controller
             $profile->addMediaFromRequest('cv_file')
                 ->toMediaCollection('cv', 'local');
         }
+
+        Mail::to($user->email)->send(new ApplicationReceived(
+            $user->name,
+            Department::find($validated['department_id'])->name
+        ));
 
         return redirect()->back()->with('success', 'Application submitted successfully.');
     }

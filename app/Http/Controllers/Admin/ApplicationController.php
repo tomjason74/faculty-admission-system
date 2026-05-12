@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ApplicationApproved;
+use App\Mail\ApplicationRejected;
 
 class ApplicationController extends Controller
 {
@@ -46,10 +49,18 @@ class ApplicationController extends Controller
                 return $faculty;
             });
 
+        $stats = [
+            'total_pending' => FacultyProfile::where('status', 'pending')->count(),
+            'total_approved' => FacultyProfile::where('status', 'approved')->count(),
+            'total_rejected' => FacultyProfile::where('status', 'rejected')->count(),
+            'total_inactive' => FacultyProfile::where('status', 'inactive')->count(),
+        ];
+
         return Inertia::render('Admin/Dashboard', [
             'applications'   => $applications,
             'approvedFaculty' => $approvedFaculty,
             'departments'    => Department::orderBy('name')->get(),
+            'stats'          => $stats,
         ]);
     }
 
@@ -82,6 +93,13 @@ class ApplicationController extends Controller
         $facultyProfile->update(['status' => 'approved']);
         $facultyProfile->user->assignRole('faculty');
 
+        Mail::to($facultyProfile->user->email)->send(new ApplicationApproved(
+            $facultyProfile->user->name,
+            $facultyProfile->department->name,
+            $facultyProfile->user->email,
+            $tempPassword
+        ));
+
         return redirect()->back()->with('credential', [
             'name'     => $facultyProfile->user->name,
             'email'    => $facultyProfile->user->email,
@@ -92,6 +110,11 @@ class ApplicationController extends Controller
     public function reject(FacultyProfile $facultyProfile)
     {
         $facultyProfile->update(['status' => 'rejected']);
+
+        Mail::to($facultyProfile->user->email)->send(new ApplicationRejected(
+            $facultyProfile->user->name,
+            $facultyProfile->department->name
+        ));
 
         return redirect()->back()->with('success', 'Application rejected.');
     }
