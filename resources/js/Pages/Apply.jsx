@@ -133,10 +133,14 @@ export default function Apply({ departments }) {
                                         id="phone"
                                         type="tel"
                                         required
-                                        placeholder="e.g. 09XX-XXX-XXXX"
+                                        placeholder="e.g. 09123456789"
+                                        maxLength={11}
                                         className="w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-maroon-800 focus:border-maroon-800 transition"
                                         value={data.phone}
-                                        onChange={e => setData('phone', e.target.value)}
+                                        onChange={e => {
+                                            const numericValue = e.target.value.replace(/\D/g, '').slice(0, 11);
+                                            setData('phone', numericValue);
+                                        }}
                                     />
                                     {errors.phone && <p className="mt-1.5 text-xs text-red-600">{errors.phone}</p>}
                                 </div>

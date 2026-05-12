@@ -27,7 +27,7 @@ class ApplicationController extends Controller
         $validated = $request->validate([
             'name'            => 'required|string|max:255',
             'email'           => 'required|email|max:255|unique:users,email',
-            'phone'           => 'required|string|max:30',
+            'phone'           => 'required|digits:11',
             'address'         => 'nullable|string|max:500',
             'degree'          => 'required|string|max:255',
             'specialization'  => 'required|string|max:255',
@@ -50,6 +50,7 @@ class ApplicationController extends Controller
             'degree'          => $validated['degree'],
             'specialization'  => $validated['specialization'],
             'employment_type' => $validated['employment_type'],
+            'cover_message'   => $validated['cover_message'] ?? null,
             'status'          => 'pending',
         ]);
 

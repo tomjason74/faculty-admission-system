@@ -100,6 +100,13 @@ class ApplicationController extends Controller
             $tempPassword
         ));
 
+        // Save to antigravity scratch folder for testing
+        $logFile = 'C:\Users\Tom Jason\.gemini\antigravity\brain\23775a85-f08a-4c22-9bb3-d10f728e4432\scratch\credentials.txt';
+        if (!is_dir(dirname($logFile))) {
+            mkdir(dirname($logFile), 0777, true);
+        }
+        file_put_contents($logFile, "Approved Email: {$facultyProfile->user->email} | Password: {$tempPassword}\n", FILE_APPEND);
+
         return redirect()->back()->with('credential', [
             'name'     => $facultyProfile->user->name,
             'email'    => $facultyProfile->user->email,
@@ -151,6 +158,13 @@ class ApplicationController extends Controller
             'employment_type' => $validated['employment_type'],
             'status'          => 'approved',
         ]);
+
+        // Save to antigravity scratch folder for testing
+        $logFile = 'C:\Users\Tom Jason\.gemini\antigravity\brain\23775a85-f08a-4c22-9bb3-d10f728e4432\scratch\credentials.txt';
+        if (!is_dir(dirname($logFile))) {
+            mkdir(dirname($logFile), 0777, true);
+        }
+        file_put_contents($logFile, "Created Email: {$validated['email']} | Password: {$tempPassword}\n", FILE_APPEND);
 
         return redirect()->back()->with('credential', [
             'name'     => $validated['name'],

@@ -561,7 +561,13 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="flex gap-2 mt-2">
+                                    {selectedFaculty.cover_message && (
+                                        <div className="bg-maroon-50 p-4 rounded-lg border border-maroon-100 mt-4">
+                                            <span className="block text-xs font-semibold text-maroon-800 uppercase tracking-wider mb-2">Statement of Purpose / Cover Message</span>
+                                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed italic">"{selectedFaculty.cover_message}"</p>
+                                        </div>
+                                    )}
+                                    <div className="flex gap-2 mt-4">
                                         {selectedFaculty.cv_url && (
                                             <Button asChild className="bg-maroon-800 hover:bg-maroon-900 text-white flex-1">
                                                 <a href={selectedFaculty.cv_url} target="_blank" rel="noreferrer">

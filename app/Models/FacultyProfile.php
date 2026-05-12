@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['user_id', 'department_id', 'degree', 'specialization', 'employment_type', 'status', 'hire_date'])]
+#[Fillable(['user_id', 'department_id', 'degree', 'specialization', 'employment_type', 'cover_message', 'status', 'hire_date'])]
 class FacultyProfile extends Model implements HasMedia
 {
     use InteractsWithMedia;

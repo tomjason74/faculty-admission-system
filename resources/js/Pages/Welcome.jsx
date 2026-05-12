@@ -7,10 +7,20 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         <>
             <Head title="Welcome | PUP Faculty Portal" />
             
-            <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-maroon-800 selection:text-white flex flex-col">
+            <div className="min-h-screen font-sans text-slate-800 selection:bg-maroon-800 selection:text-white flex flex-col relative">
                 
+                {/* Fixed Background Image for Full Page */}
+                <div className="fixed inset-0 -z-20 bg-slate-900">
+                    <img 
+                        src="/images/pup-campus.jpg" 
+                        alt="PUP Campus" 
+                        className="w-full h-full object-cover opacity-30" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/60 to-slate-900/90"></div>
+                </div>
+
                 {/* Top Navigation */}
-                <header className="absolute inset-x-0 top-0 z-50">
+                <header className="fixed inset-x-0 top-0 z-50 bg-white/85 backdrop-blur-md shadow-sm border-b border-slate-200/50">
                     <nav className="flex items-center justify-between p-6 lg:px-8" aria-label="Global">
                         <div className="flex lg:flex-1">
                             <Link href="/" className="-m-1.5 p-1.5 flex items-center">
@@ -46,27 +56,23 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 </header>
 
                 {/* Hero Section */}
-                <main className="flex-grow flex flex-col justify-center relative isolate pt-14">
-                    {/* Background blob decorations */}
-                    <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
-                        <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-maroon-400 to-gold-400 opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style={{clipPath: "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"}}></div>
-                    </div>
+                <main className="flex-grow flex flex-col justify-center relative isolate pt-28">
 
                     <div className="py-24 sm:py-32 lg:pb-40">
                         <div className="mx-auto max-w-7xl px-6 lg:px-8">
                             <div className="mx-auto max-w-2xl text-center">
                                 <div className="hidden sm:mb-8 sm:flex sm:justify-center">
-                                    <div className="relative rounded-full px-3 py-1 text-sm leading-6 text-slate-600 ring-1 ring-slate-900/10 hover:ring-slate-900/20">
+                                    <div className="relative rounded-full px-3 py-1 text-sm leading-6 text-slate-300 ring-1 ring-white/20 hover:ring-white/40 bg-white/5 backdrop-blur-sm">
                                         Join the country's first polytechnic university.{' '}
-                                        <Link href={route('register')} className="font-semibold text-maroon-800">
+                                        <a href="https://www.pup.edu.ph/" target="_blank" rel="noopener noreferrer" className="font-semibold text-gold-400 hover:text-gold-300">
                                             <span className="absolute inset-0" aria-hidden="true"></span>Read more <span aria-hidden="true">&rarr;</span>
-                                        </Link>
+                                        </a>
                                     </div>
                                 </div>
-                                <h1 className="text-4xl font-serif font-bold tracking-tight text-slate-900 sm:text-6xl">
-                                    Shape the Future of <span className="text-maroon-800">Education</span>
+                                <h1 className="text-4xl font-serif font-bold tracking-tight text-white sm:text-6xl drop-shadow-sm">
+                                    Shape the Future of <span className="text-gold-400">Education</span>
                                 </h1>
-                                <p className="mt-6 text-lg leading-8 text-slate-600">
+                                <p className="mt-6 text-lg leading-8 text-slate-200 drop-shadow-sm">
                                     Welcome to the official Faculty Admission and Profiling System of the Polytechnic University of the Philippines. Streamline your application, track your compliance, and manage your academic profile securely.
                                 </p>
                                 <div className="mt-10 flex items-center justify-center gap-x-6">
@@ -77,7 +83,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                             </Button>
                                         </Link>
                                     )}
-                                    <Link href={route('login')} className="text-sm font-semibold leading-6 text-slate-900 hover:text-maroon-800 group">
+                                    <Link href={route('login')} className="text-sm font-semibold leading-6 text-slate-300 hover:text-white group">
                                         Faculty Login <span aria-hidden="true" className="inline-block transition-transform group-hover:translate-x-1">→</span>
                                     </Link>
                                 </div>
@@ -86,10 +92,10 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     </div>
 
                     {/* Features Section */}
-                    <div className="bg-white py-24 sm:py-32 border-t border-slate-100 mt-auto">
+                    <div className="bg-white/90 backdrop-blur-lg py-24 sm:py-32 border-t border-slate-200/50 mt-auto">
                         <div className="mx-auto max-w-7xl px-6 lg:px-8">
                             <div className="mx-auto max-w-2xl lg:text-center">
-                                <h2 className="text-base font-semibold leading-7 text-gold-600 tracking-wide uppercase">Unified Portal</h2>
+                                <h2 className="text-base font-semibold leading-7 text-maroon-800 tracking-wide uppercase">Unified Portal</h2>
                                 <p className="mt-2 text-3xl font-serif font-bold tracking-tight text-slate-900 sm:text-4xl">
                                     Everything you need to manage your academic career
                                 </p>
