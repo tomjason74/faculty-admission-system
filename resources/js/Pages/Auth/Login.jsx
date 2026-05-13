@@ -103,12 +103,7 @@ export default function Login({ status, canResetPassword }) {
                     Sign In
                 </Button>
 
-                <p className="text-center text-sm text-slate-600 mt-6">
-                    Don't have an account?{' '}
-                    <Link href={route('register')} className="font-semibold text-maroon-800 hover:underline">
-                        Register here
-                    </Link>
-                </p>
+
             </form>
         </GuestLayout>
     );

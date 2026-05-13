@@ -333,7 +333,8 @@ export default function Apply({ departments }) {
 
             {/* Footer */}
             <footer className="text-center text-xs text-slate-400 pb-10">
-                Polytechnic University of the Philippines &copy; {new Date().getFullYear()}
+                <p>Polytechnic University of the Philippines &copy; {new Date().getFullYear()}. All Rights Reserved.</p>
+                <p className="mt-2 text-xs opacity-50">Developed by: Tom Jason D. Umali</p>
             </footer>
 
             <Modal show={showSuccessModal} onClose={handleCloseModal} maxWidth="md">

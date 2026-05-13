@@ -145,6 +145,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 <footer className="bg-slate-900 text-slate-400 py-8 text-center text-sm mt-auto">
                     <p>Polytechnic University of the Philippines &copy; {new Date().getFullYear()}. All Rights Reserved.</p>
                     <p className="mt-2 text-xs opacity-50">System powered by Laravel v{laravelVersion} (PHP v{phpVersion})</p>
+                    <p className="mt-2 text-xs opacity-50">Developed by: Tom Jason D. Umali</p>
                 </footer>
             </div>
         </>
