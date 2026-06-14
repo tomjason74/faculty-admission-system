@@ -7,12 +7,21 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['user_id', 'department_id', 'degree', 'specialization', 'employment_type', 'cover_message', 'status', 'hire_date'])]
+#[Fillable(['user_id', 'department_id', 'degree', 'specialization', 'employment_type', 'cover_message', 'status', 'hire_date', 'is_enrolled_graduate', 'grad_school_name', 'grad_program', 'is_new_hire', 'semester_evaluations', 'teaching_load_status'])]
 class FacultyProfile extends Model implements HasMedia
 {
     use InteractsWithMedia;
 
     protected $appends = ['is_compliant', 'compliance_percentage'];
+
+    protected function casts(): array
+    {
+        return [
+            'is_enrolled_graduate' => 'boolean',
+            'is_new_hire' => 'boolean',
+            'semester_evaluations' => 'array',
+        ];
+    }
 
     public function user()
     {

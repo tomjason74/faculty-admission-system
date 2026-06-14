@@ -2,7 +2,7 @@
 title Faculty Admission System
 echo Starting the Faculty Admission System...
 cd /d "%~dp0"
-echo Opening browser to http://localhost:8000
-start http://localhost:8000
 echo Booting up servers (Laravel and Vite)...
+echo The browser will open automatically in a few seconds...
+start /b cmd /c "ping 127.0.0.1 -n 5 >nul & start http://localhost:8000"
 npm run start-system

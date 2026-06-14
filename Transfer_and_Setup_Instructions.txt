@@ -1,0 +1,81 @@
+FACULTY ADMISSION & PROFILING SYSTEM - SYSTEM TRANSFER & SETUP GUIDE
+
+This guide provides instructions for packing, transferring, and setting up the Faculty Admission and Profiling System on a new computer (laptop or desktop).
+
+================================================================================
+1. PREREQUISITES CHECKLIST
+================================================================================
+Before setting up the project, the new computer must have the following runtimes installed:
+
+* PHP (Version 8.2 or 8.3)
+  - Purpose: Runs the Laravel backend server.
+  - Download: https://windows.php.net/download/
+
+* Node.js (Version 20.x or newer LTS)
+  - Purpose: Compiles the React/Vite frontend.
+  - Download: https://nodejs.org/
+
+* Composer (Version 2.x or newer)
+  - Purpose: Installs PHP package dependencies.
+  - Download: https://getcomposer.org/
+
+NOTE: Ensure that both "php" and "npm" are added to your system environment PATH variables on Windows so the command line can locate them.
+
+================================================================================
+2. STEP-BY-STEP TRANSFER GUIDE (For the Sender)
+================================================================================
+If you are uploading the system to Google Drive, OneDrive, or sending it via a flash drive, follow these steps to keep the size small:
+
+1. Delete these heavy, temporary folders (these can be easily reinstalled on the new computer, and deleting them saves over 350MB of upload size):
+   * Delete the folder: "node_modules"
+   * Delete the folder: "vendor"
+   * Keep the folder "bootstrap/cache", but delete any files inside it.
+
+2. Keep the Database File:
+   * Do NOT delete "database/database.sqlite". This file contains all your active records, faculty profiles, and settings.
+
+3. Compress the project folder:
+   * Right-click the main project folder -> click "Send to" -> "Compressed (zipped) folder" (or "Compress to ZIP file" on Windows 11).
+   * The zipped file size will now be only around 5MB.
+
+4. Upload/Transfer:
+   * Upload this ZIP file to your Google Drive or transfer it to a USB drive.
+
+================================================================================
+3. STEP-BY-STEP INSTALLATION GUIDE (For the Receiver)
+================================================================================
+Once the new computer has PHP, Node.js, and Composer installed, follow these steps:
+
+1. Extract the ZIP file:
+   * Extract the ZIP folder to your preferred location (e.g., C:\Users\Admin\Desktop\Faculty-Admission-System).
+
+2. Open Command Prompt in the extracted folder:
+   * In Windows Explorer, open the project folder, click the address bar at the top, type "cmd" and press Enter.
+
+3. Restore the packages:
+   * Run the following command in the Command Prompt to download and restore the PHP libraries:
+     composer install
+   * Next, run this command to download and restore the React/Vite libraries:
+     npm install
+
+4. Verify settings:
+   * Check if a file named ".env" exists in the main folder. If it is missing, rename the ".env.example" file to ".env" and make sure it contains the line: DB_CONNECTION=sqlite
+
+================================================================================
+4. HOW TO RUN THE SYSTEM
+================================================================================
+To start the system quickly, a launch script has been set up:
+
+1. Double-click the file named "start_system.bat" in the main project folder.
+2. A single command prompt window will open. It will automatically:
+   * Start the Laravel and Vite servers.
+   * Wait 4 seconds for the services to boot.
+   * Open your default web browser automatically to http://localhost:8000.
+3. TO STOP: Simply close the Command Prompt window.
+
+================================================================================
+5. DATABASE BACKUPS & MAINTENANCE
+================================================================================
+* All data is self-contained in: database/database.sqlite
+* BACKUP: Make a copy of "database.sqlite" and save it in a secure folder or cloud backup.
+* RESTORE: Replace the active "database.sqlite" file with your backup copy.

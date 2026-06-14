@@ -34,12 +34,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/faculty', [\App\Http\Controllers\Admin\ApplicationController::class, 'storeFaculty'])->name('faculty.store');
     Route::post('/faculty/{facultyProfile}/deactivate', [\App\Http\Controllers\Admin\ApplicationController::class, 'deactivate'])->name('faculty.deactivate');
     Route::post('/faculty/{facultyProfile}/reactivate', [\App\Http\Controllers\Admin\ApplicationController::class, 'reactivate'])->name('faculty.reactivate');
+    Route::get('/reports/renewal', [\App\Http\Controllers\Admin\ApplicationController::class, 'previewRenewalReport'])->name('reports.renewal');
+    Route::post('/reports/renewal/signatories', [\App\Http\Controllers\Admin\ApplicationController::class, 'saveSemesterSignatories'])->name('reports.renewal.signatories');
+    Route::post('/faculty/{facultyProfile}/update-renewal', [\App\Http\Controllers\Admin\ApplicationController::class, 'updateRenewal'])->name('faculty.update_renewal');
+    Route::get('/faculty/import-template', [\App\Http\Controllers\Admin\BulkImportController::class, 'downloadTemplate'])->name('faculty.import_template');
+    Route::post('/faculty/import', [\App\Http\Controllers\Admin\BulkImportController::class, 'import'])->name('faculty.import');
 });
 
 Route::middleware(['auth', 'role:faculty'])->prefix('faculty')->name('faculty.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Faculty\DashboardController::class, 'index'])->name('dashboard');
     Route::post('/documents', [\App\Http\Controllers\Faculty\DashboardController::class, 'storeDocument'])->name('documents.store');
     Route::post('/class-records', [\App\Http\Controllers\Faculty\DashboardController::class, 'storeClassRecord'])->name('class_records.store');
+    Route::post('/update-renewal', [\App\Http\Controllers\Faculty\DashboardController::class, 'updateRenewal'])->name('update_renewal');
 });
 
 Route::middleware(['auth'])->group(function () {

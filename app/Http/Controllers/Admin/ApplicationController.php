@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\FacultyProfile;
 use App\Models\User;
+use App\Models\SemesterSignatory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -100,11 +101,8 @@ class ApplicationController extends Controller
             $tempPassword
         ));
 
-        // Save to antigravity scratch folder for testing
-        $logFile = 'C:\Users\Tom Jason\.gemini\antigravity\brain\23775a85-f08a-4c22-9bb3-d10f728e4432\scratch\credentials.txt';
-        if (!is_dir(dirname($logFile))) {
-            mkdir(dirname($logFile), 0777, true);
-        }
+        // Save to project root for easy access
+        $logFile = base_path('credentials.txt');
         file_put_contents($logFile, "Approved Email: {$facultyProfile->user->email} | Password: {$tempPassword}\n", FILE_APPEND);
 
         return redirect()->back()->with('credential', [
@@ -138,6 +136,12 @@ class ApplicationController extends Controller
             'degree'          => 'required|string|max:255',
             'specialization'  => 'required|string|max:255',
             'employment_type' => 'required|in:full-time,part-time,contract',
+            'is_enrolled_graduate' => 'nullable|boolean',
+            'grad_school_name' => 'nullable|string|max:255',
+            'grad_program' => 'nullable|string|max:255',
+            'is_new_hire' => 'nullable|boolean',
+            'semester_evaluations' => 'nullable|array',
+            'teaching_load_status' => 'nullable|string|max:255',
         ]);
 
         $tempPassword = Str::random(10);
@@ -157,13 +161,16 @@ class ApplicationController extends Controller
             'specialization'  => $validated['specialization'],
             'employment_type' => $validated['employment_type'],
             'status'          => 'approved',
+            'is_enrolled_graduate' => (bool)($validated['is_enrolled_graduate'] ?? false),
+            'grad_school_name' => $validated['grad_school_name'] ?? null,
+            'grad_program' => $validated['grad_program'] ?? null,
+            'is_new_hire' => (bool)($validated['is_new_hire'] ?? false),
+            'semester_evaluations' => $validated['semester_evaluations'] ?? null,
+            'teaching_load_status' => $validated['teaching_load_status'] ?? null,
         ]);
 
-        // Save to antigravity scratch folder for testing
-        $logFile = 'C:\Users\Tom Jason\.gemini\antigravity\brain\23775a85-f08a-4c22-9bb3-d10f728e4432\scratch\credentials.txt';
-        if (!is_dir(dirname($logFile))) {
-            mkdir(dirname($logFile), 0777, true);
-        }
+        // Save to project root for easy access
+        $logFile = base_path('credentials.txt');
         file_put_contents($logFile, "Created Email: {$validated['email']} | Password: {$tempPassword}\n", FILE_APPEND);
 
         return redirect()->back()->with('credential', [
@@ -203,5 +210,84 @@ class ApplicationController extends Controller
         $facultyProfile->user->assignRole('faculty');
 
         return redirect()->back()->with('success', 'Faculty account has been reactivated.');
+    }
+
+    /**
+     * Preview the print-friendly renewal report grouped by department/program
+     */
+    public function previewRenewalReport(Request $request)
+    {
+        $approvedFaculty = FacultyProfile::with(['user', 'department'])
+            ->where('status', 'approved')
+            ->get()
+            ->map(function ($profile) {
+                return [
+                    'id' => $profile->id,
+                    'name' => $profile->user->name,
+                    'department_id' => $profile->department_id,
+                    'department_name' => $profile->department->name,
+                    'degree' => $profile->degree,
+                    'specialization' => $profile->specialization,
+                    'employment_type' => $profile->employment_type,
+                    'is_enrolled_graduate' => (bool)$profile->is_enrolled_graduate,
+                    'grad_school_name' => $profile->grad_school_name,
+                    'grad_program' => $profile->grad_program,
+                    'is_new_hire' => (bool)$profile->is_new_hire,
+                    'semester_evaluations' => $profile->semester_evaluations ?? [],
+                    'teaching_load_status' => $profile->teaching_load_status,
+                ];
+            });
+
+        return Inertia::render('Admin/RenewalReport', [
+            'faculty' => $approvedFaculty,
+            'departments' => Department::orderBy('name')->get(),
+            'signatories' => SemesterSignatory::all(),
+        ]);
+    }
+
+    /**
+     * Save or update signatories for a semester
+     */
+    public function saveSemesterSignatories(Request $request)
+    {
+        $validated = $request->validate([
+            'semester_code' => 'required|string|max:255',
+            'date' => 'nullable|string|max:255',
+            'president_name' => 'nullable|string|max:255',
+            'president_title' => 'nullable|string|max:255',
+            'vpaa_name' => 'nullable|string|max:255',
+            'vpaa_title' => 'nullable|string|max:255',
+            'sender_name' => 'nullable|string|max:255',
+            'sender_title' => 'nullable|string|max:255',
+            'recommender_name' => 'nullable|string|max:255',
+            'recommender_title' => 'nullable|string|max:255',
+            'eval_semesters' => 'nullable|array',
+        ]);
+
+        SemesterSignatory::updateOrCreate(
+            ['semester_code' => $validated['semester_code']],
+            $validated
+        );
+
+        return redirect()->back()->with('success', 'Signatory configurations saved successfully.');
+    }
+
+    /**
+     * Update faculty renewal details
+     */
+    public function updateRenewal(Request $request, FacultyProfile $facultyProfile)
+    {
+        $validated = $request->validate([
+            'is_enrolled_graduate' => 'required|boolean',
+            'grad_school_name' => 'nullable|string|max:255',
+            'grad_program' => 'nullable|string|max:255',
+            'is_new_hire' => 'required|boolean',
+            'semester_evaluations' => 'nullable|array',
+            'teaching_load_status' => 'nullable|string|max:255',
+        ]);
+
+        $facultyProfile->update($validated);
+
+        return redirect()->back()->with('success', 'Faculty renewal details updated successfully.');
     }
 }

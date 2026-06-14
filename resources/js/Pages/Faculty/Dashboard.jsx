@@ -3,7 +3,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
-import { CheckCircle, Clock, UploadCloud, Download, FileArchive, Check, AlertCircle, Trash2 } from 'lucide-react';
+import { CheckCircle, Clock, UploadCloud, Download, FileArchive, Check, AlertCircle, Trash2, X, Edit3, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 
@@ -13,6 +13,46 @@ export default function Dashboard({ profile, documents, classRecords }) {
         { key: 'clearances', label: 'Clearances' },
         { key: 'ids', label: 'Identification Documents (IDs)' },
     ];
+
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editForm, setEditForm] = useState({
+        is_enrolled_graduate: profile?.is_enrolled_graduate ?? false,
+        grad_school_name: profile?.grad_school_name ?? '',
+        grad_program: profile?.grad_program ?? '',
+        is_new_hire: profile?.is_new_hire ?? false,
+        teaching_load_status: profile?.teaching_load_status ?? '',
+        eval_2324_sem1: profile?.semester_evaluations?.['2023-2024_sem1'] ?? '',
+        eval_2324_sem2: profile?.semester_evaluations?.['2023-2024_sem2'] ?? '',
+        eval_2425_sem1: profile?.semester_evaluations?.['2024-2025_sem1'] ?? '',
+        eval_2425_sem2: profile?.semester_evaluations?.['2024-2025_sem2'] ?? '',
+    });
+
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSaveRenewal = (e) => {
+        e.preventDefault();
+        setIsSaving(true);
+        router.post(route('faculty.update_renewal'), {
+            is_enrolled_graduate: editForm.is_enrolled_graduate,
+            grad_school_name: editForm.grad_school_name,
+            grad_program: editForm.grad_program,
+            is_new_hire: editForm.is_new_hire,
+            teaching_load_status: editForm.teaching_load_status,
+            semester_evaluations: {
+                '2023-2024_sem1': editForm.eval_2324_sem1,
+                '2023-2024_sem2': editForm.eval_2324_sem2,
+                '2024-2025_sem1': editForm.eval_2425_sem1,
+                '2024-2025_sem2': editForm.eval_2425_sem2,
+            }
+        }, {
+            onSuccess: () => {
+                setIsSaving(false);
+                setShowEditModal(false);
+            },
+            onError: () => setIsSaving(false),
+            preserveScroll: true
+        });
+    };
 
     const docForm = useForm({
         collection: collections[0].key,
@@ -98,6 +138,41 @@ export default function Dashboard({ profile, documents, classRecords }) {
                                 </div>
                             </div>
                             <p className="text-xs text-slate-500 mt-4">Total records uploaded</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-t-4 border-t-maroon-800 shadow-sm flex flex-col justify-between">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-slate-500 font-sans">Graduate & Renewal Info</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-1 flex flex-col justify-between">
+                            <div className="space-y-2">
+                                <div className="text-sm text-slate-700">
+                                    <span className="font-semibold">Graduate Studies: </span>
+                                    {profile.is_enrolled_graduate ? (
+                                        <span className="text-green-700 font-medium">Enrolled ({profile.grad_program || 'N/A'} at {profile.grad_school_name || 'N/A'})</span>
+                                    ) : (
+                                        <span className="text-slate-500 italic">Not Enrolled</span>
+                                    )}
+                                </div>
+                                <div className="text-sm text-slate-700">
+                                    <span className="font-semibold">Hiring Type: </span>
+                                    <span>{profile.is_new_hire ? 'New Hire' : 'Renewal'}</span>
+                                </div>
+                                {profile.teaching_load_status && (
+                                    <div className="text-sm text-slate-700">
+                                        <span className="font-semibold">Status Note: </span>
+                                        <span>{profile.teaching_load_status}</span>
+                                    </div>
+                                )}
+                            </div>
+                            <Button 
+                                onClick={() => setShowEditModal(true)} 
+                                variant="outline" 
+                                className="mt-4 w-full border-maroon-800 text-maroon-800 hover:bg-maroon-50"
+                            >
+                                <Edit3 className="h-4 w-4 mr-2" /> Update Details
+                            </Button>
                         </CardContent>
                     </Card>
                 </div>
@@ -297,8 +372,116 @@ export default function Dashboard({ profile, documents, classRecords }) {
                         </CardContent>
                     </Card>
 
-                </div>
             </div>
+            </div>
+
+            {showEditModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+                            <div>
+                                <h3 className="text-lg font-serif font-bold text-slate-800">Update Renewal & Graduate Studies Info</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Keep your graduate enrollment status and semester evaluation details updated.</p>
+                            </div>
+                            <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-700">
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleSaveRenewal} className="overflow-y-auto flex-1 p-6 space-y-5">
+                            <div className="grid grid-cols-1 gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-100 pb-4">
+                                    <div className="flex items-center space-x-2 mt-2">
+                                        <input
+                                            type="checkbox"
+                                            id="edit_is_enrolled_graduate"
+                                            checked={editForm.is_enrolled_graduate}
+                                            onChange={e => setEditForm(prev => ({ ...prev, is_enrolled_graduate: e.target.checked }))}
+                                            className="rounded border-slate-300 text-maroon-800 focus:ring-maroon-800"
+                                        />
+                                        <label htmlFor="edit_is_enrolled_graduate" className="text-sm font-semibold text-slate-700">Enrolled in Graduate Studies</label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-2 mt-2">
+                                        <input
+                                            type="checkbox"
+                                            id="edit_is_new_hire"
+                                            checked={editForm.is_new_hire}
+                                            onChange={e => setEditForm(prev => ({ ...prev, is_new_hire: e.target.checked }))}
+                                            className="rounded border-slate-300 text-maroon-800 focus:ring-maroon-800"
+                                        />
+                                        <label htmlFor="edit_is_new_hire" className="text-sm font-semibold text-slate-700">Newly Hired Faculty</label>
+                                    </div>
+                                </div>
+
+                                {editForm.is_enrolled_graduate && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Graduate School Name</label>
+                                            <Input
+                                                type="text"
+                                                placeholder="e.g. PUP Graduate School"
+                                                value={editForm.grad_school_name}
+                                                onChange={e => setEditForm(prev => ({ ...prev, grad_school_name: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Graduate Program</label>
+                                            <Input
+                                                type="text"
+                                                placeholder="e.g. DBA"
+                                                value={editForm.grad_program}
+                                                onChange={e => setEditForm(prev => ({ ...prev, grad_program: e.target.value }))}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Teaching Load / Status Note</label>
+                                    <Input
+                                        type="text"
+                                        placeholder="e.g. No teaching load / Newly hired"
+                                        value={editForm.teaching_load_status}
+                                        onChange={e => setEditForm(prev => ({ ...prev, teaching_load_status: e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="border-t border-slate-100 pt-4 mt-2 space-y-3">
+                                    <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-200 pb-2 font-serif">Semester Evaluations</h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {[
+                                            ['2023-2024 Sem 1', 'eval_2324_sem1'],
+                                            ['2023-2024 Sem 2', 'eval_2324_sem2'],
+                                            ['2024-2025 Sem 1', 'eval_2425_sem1'],
+                                            ['2024-2025 Sem 2', 'eval_2425_sem2'],
+                                        ].map(([label, field]) => (
+                                            <div key={field}>
+                                                <span className="text-xs text-slate-500 font-semibold">{label} Rating</span>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="e.g. Very Satisfactory"
+                                                    value={editForm[field]}
+                                                    onChange={e => setEditForm(prev => ({ ...prev, [field]: e.target.value }))}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        <div className="p-6 pt-0 flex justify-end gap-3 shrink-0">
+                            <Button variant="outline" onClick={() => setShowEditModal(false)}>Cancel</Button>
+                            <Button
+                                onClick={handleSaveRenewal}
+                                disabled={isSaving}
+                                className="bg-maroon-800 hover:bg-maroon-900 text-white"
+                            >
+                                {isSaving ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }

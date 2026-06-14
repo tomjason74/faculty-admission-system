@@ -76,4 +76,26 @@ class DashboardController extends Controller
 
         return redirect()->back()->with('success', 'Class record uploaded successfully.');
     }
+
+    public function updateRenewal(Request $request)
+    {
+        $profile = $request->user()->facultyProfile;
+
+        if (!$profile) {
+            return redirect()->back()->with('error', 'Profile not found.');
+        }
+
+        $validated = $request->validate([
+            'is_enrolled_graduate' => 'required|boolean',
+            'grad_school_name' => 'nullable|string|max:255',
+            'grad_program' => 'nullable|string|max:255',
+            'is_new_hire' => 'required|boolean',
+            'semester_evaluations' => 'nullable|array',
+            'teaching_load_status' => 'nullable|string|max:255',
+        ]);
+
+        $profile->update($validated);
+
+        return redirect()->back()->with('success', 'Renewal profile details updated successfully.');
+    }
 }

@@ -6,12 +6,14 @@ import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import {
     BadgeCheck, XCircle, FileText, Download, Search, Eye, X,
-    FolderOpen, FileCheck, FileMinus, User, UserPlus, KeyRound, Copy, Check, Trash2, ShieldAlert, CheckCircle2
+    FolderOpen, FileCheck, FileMinus, User, UserPlus, KeyRound, Copy, Check, Trash2, ShieldAlert, CheckCircle2,
+    Upload, FileSpreadsheet, AlertCircle
 } from 'lucide-react';
 
 export default function Dashboard({ applications, approvedFaculty, departments, stats }) {
     const { props } = usePage();
     const credential = props.credential ?? null;
+    const bulkImportResult = props.bulk_import_result ?? null;
 
     const { post, processing } = useForm();
     const [actionId, setActionId] = useState(null);
@@ -23,6 +25,78 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
     const [showCredential, setShowCredential] = useState(!!credential);
     const [copiedField, setCopiedField] = useState(null);
     const [directoryTab, setDirectoryTab] = useState('active');
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [showImportResults, setShowImportResults] = useState(!!bulkImportResult);
+    const [importFile, setImportFile] = useState(null);
+    const [isImporting, setIsImporting] = useState(false);
+
+    const [renewalData, setRenewalData] = useState({
+        is_enrolled_graduate: false,
+        grad_school_name: '',
+        grad_program: '',
+        is_new_hire: false,
+        teaching_load_status: '',
+        eval_2324_sem1: '',
+        eval_2324_sem2: '',
+        eval_2425_sem1: '',
+        eval_2425_sem2: '',
+    });
+
+    const [isSavingRenewal, setIsSavingRenewal] = useState(false);
+
+    const handleSelectFaculty = (faculty) => {
+        setSelectedFaculty(faculty);
+        setActiveTab('info');
+        setRenewalData({
+            is_enrolled_graduate: faculty.is_enrolled_graduate ?? false,
+            grad_school_name: faculty.grad_school_name ?? '',
+            grad_program: faculty.grad_program ?? '',
+            is_new_hire: faculty.is_new_hire ?? false,
+            teaching_load_status: faculty.teaching_load_status ?? '',
+            eval_2324_sem1: faculty.semester_evaluations?.['2023-2024_sem1'] ?? '',
+            eval_2324_sem2: faculty.semester_evaluations?.['2023-2024_sem2'] ?? '',
+            eval_2425_sem1: faculty.semester_evaluations?.['2024-2025_sem1'] ?? '',
+            eval_2425_sem2: faculty.semester_evaluations?.['2024-2025_sem2'] ?? '',
+        });
+    };
+
+    const handleSaveRenewal = (e) => {
+        e.preventDefault();
+        setIsSavingRenewal(true);
+        router.post(route('admin.faculty.update_renewal', selectedFaculty.id), {
+            is_enrolled_graduate: renewalData.is_enrolled_graduate,
+            grad_school_name: renewalData.grad_school_name,
+            grad_program: renewalData.grad_program,
+            is_new_hire: renewalData.is_new_hire,
+            teaching_load_status: renewalData.teaching_load_status,
+            semester_evaluations: {
+                '2023-2024_sem1': renewalData.eval_2324_sem1,
+                '2023-2024_sem2': renewalData.eval_2324_sem2,
+                '2024-2025_sem1': renewalData.eval_2425_sem1,
+                '2024-2025_sem2': renewalData.eval_2425_sem2,
+            }
+        }, {
+            onSuccess: () => {
+                setIsSavingRenewal(false);
+                setSelectedFaculty(prev => ({
+                    ...prev,
+                    is_enrolled_graduate: renewalData.is_enrolled_graduate,
+                    grad_school_name: renewalData.grad_school_name,
+                    grad_program: renewalData.grad_program,
+                    is_new_hire: renewalData.is_new_hire,
+                    teaching_load_status: renewalData.teaching_load_status,
+                    semester_evaluations: {
+                        '2023-2024_sem1': renewalData.eval_2324_sem1,
+                        '2023-2024_sem2': renewalData.eval_2324_sem2,
+                        '2024-2025_sem1': renewalData.eval_2425_sem1,
+                        '2024-2025_sem2': renewalData.eval_2425_sem2,
+                    }
+                }));
+            },
+            onError: () => setIsSavingRenewal(false),
+            preserveScroll: true
+        });
+    };
 
     const addForm = useForm({
         name: '',
@@ -31,6 +105,15 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
         degree: '',
         specialization: '',
         employment_type: '',
+        is_enrolled_graduate: false,
+        grad_school_name: '',
+        grad_program: '',
+        is_new_hire: false,
+        teaching_load_status: '',
+        eval_2324_sem1: '',
+        eval_2324_sem2: '',
+        eval_2425_sem1: '',
+        eval_2425_sem2: '',
     });
 
     const deactivateForm = useForm({
@@ -57,7 +140,15 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
 
     const handleAddFaculty = (e) => {
         e.preventDefault();
-        addForm.post(route('admin.faculty.store'), {
+        addForm.transform((data) => ({
+            ...data,
+            semester_evaluations: {
+                '2023-2024_sem1': data.eval_2324_sem1,
+                '2023-2024_sem2': data.eval_2324_sem2,
+                '2024-2025_sem1': data.eval_2425_sem1,
+                '2024-2025_sem2': data.eval_2425_sem2,
+            }
+        })).post(route('admin.faculty.store'), {
             onSuccess: () => {
                 setShowAddModal(false);
                 addForm.reset();
@@ -158,6 +249,22 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                 className="block w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-maroon-800 focus:border-maroon-800 sm:text-sm bg-white shadow-sm"
                             />
                         </div>
+                        <Button
+                            onClick={() => router.get(route('admin.reports.renewal'))}
+                            variant="outline"
+                            className="border-slate-300 text-slate-700 hover:bg-slate-50 shrink-0"
+                        >
+                            <FileText className="h-4 w-4 mr-2 text-slate-500" />
+                            Generate Renewal Report
+                        </Button>
+                        <Button
+                            onClick={() => setShowImportModal(true)}
+                            variant="outline"
+                            className="border-slate-300 text-slate-700 hover:bg-slate-50 shrink-0"
+                        >
+                            <Upload className="h-4 w-4 mr-2 text-slate-500" />
+                            Import from Excel
+                        </Button>
                         <Button
                             onClick={() => setShowAddModal(true)}
                             className="bg-maroon-800 hover:bg-maroon-900 text-white shrink-0"
@@ -317,7 +424,7 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-right space-x-2">
-                                                    <Button variant="ghost" size="sm" onClick={() => { setSelectedFaculty(app); setActiveTab('info'); }} className="text-slate-600 hover:text-maroon-800">
+                                                    <Button variant="ghost" size="sm" onClick={() => handleSelectFaculty(app)} className="text-slate-600 hover:text-maroon-800">
                                                         <Eye className="h-4 w-4 mr-1.5" /> Details
                                                     </Button>
                                                     <Button variant="outline" size="sm" onClick={() => handleApprove(app.id)} disabled={processing && actionId === app.id} className="border-green-200 text-green-700 hover:bg-green-50">
@@ -403,7 +510,7 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <Button variant="ghost" size="sm" onClick={() => { setSelectedFaculty(faculty); setActiveTab('info'); }} className="text-slate-600 hover:text-maroon-800">
+                                                    <Button variant="ghost" size="sm" onClick={() => handleSelectFaculty(faculty)} className="text-slate-600 hover:text-maroon-800">
                                                         <Eye className="h-4 w-4 mr-1.5" /> View Details
                                                     </Button>
                                                 </td>
@@ -498,6 +605,97 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                     </select>
                                     {addForm.errors.employment_type && <p className="text-xs text-red-500 mt-1">{addForm.errors.employment_type}</p>}
                                 </div>
+
+                                <div className="border-t border-slate-100 pt-4 mt-4">
+                                    <h4 className="text-sm font-semibold text-slate-800 mb-4 font-serif">Renewal & Graduate Studies (Optional)</h4>
+                                    
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="flex items-center space-x-2 mt-2">
+                                            <input
+                                                type="checkbox"
+                                                id="is_enrolled_graduate"
+                                                checked={addForm.data.is_enrolled_graduate}
+                                                onChange={e => addForm.setData('is_enrolled_graduate', e.target.checked)}
+                                                className="rounded border-slate-300 text-maroon-800 focus:ring-maroon-800"
+                                            />
+                                            <label htmlFor="is_enrolled_graduate" className="text-sm text-slate-700 font-semibold">Enrolled in Graduate Studies</label>
+                                        </div>
+
+                                        <div className="flex items-center space-x-2 mt-2">
+                                            <input
+                                                type="checkbox"
+                                                id="is_new_hire"
+                                                checked={addForm.data.is_new_hire}
+                                                onChange={e => addForm.setData('is_new_hire', e.target.checked)}
+                                                className="rounded border-slate-300 text-maroon-800 focus:ring-maroon-800"
+                                            />
+                                            <label htmlFor="is_new_hire" className="text-sm text-slate-700 font-semibold">Newly Hired Faculty</label>
+                                        </div>
+                                    </div>
+
+                                    {addForm.data.is_enrolled_graduate && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Graduate School Name</label>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="e.g. PUP Graduate School"
+                                                    value={addForm.data.grad_school_name}
+                                                    onChange={e => addForm.setData('grad_school_name', e.target.value)}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Graduate Program</label>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="e.g. DBA"
+                                                    value={addForm.data.grad_program}
+                                                    onChange={e => addForm.setData('grad_program', e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-4">
+                                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Teaching Load / Status Note</label>
+                                        <Input
+                                            type="text"
+                                            placeholder="e.g. No teaching load / Newly hired"
+                                            value={addForm.data.teaching_load_status}
+                                            onChange={e => addForm.setData('teaching_load_status', e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div className="mt-4 space-y-3">
+                                        <label className="block text-sm font-semibold text-slate-700">Semester Evaluations</label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {[
+                                                ['2023-2024 Sem 1', 'eval_2324_sem1'],
+                                                ['2023-2024 Sem 2', 'eval_2324_sem2'],
+                                                ['2024-2025 Sem 1', 'eval_2425_sem1'],
+                                                ['2024-2025 Sem 2', 'eval_2425_sem2'],
+                                            ].map(([label, field]) => (
+                                                <div key={field}>
+                                                    <span className="text-xs text-slate-500 font-semibold">{label} Rating</span>
+                                                    <select
+                                                        className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maroon-800 bg-white"
+                                                        value={addForm.data[field]}
+                                                        onChange={e => addForm.setData(field, e.target.value)}
+                                                    >
+                                                        <option value="">-- Select Rating --</option>
+                                                        <option value="Outstanding">Outstanding</option>
+                                                        <option value="Very Satisfactory">Very Satisfactory</option>
+                                                        <option value="Satisfactory">Satisfactory</option>
+                                                        <option value="Unsatisfactory">Unsatisfactory</option>
+                                                        <option value="Poor">Poor</option>
+                                                        <option value="No teaching load">No teaching load</option>
+                                                        <option value="New Faculty">New Faculty</option>
+                                                    </select>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </form>
                         <div className="p-6 pt-0 flex justify-end gap-3 shrink-0">
@@ -535,7 +733,11 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                         </div>
 
                         <div className="flex border-b border-slate-100 shrink-0 px-6">
-                            {[['info', User, 'Profile Info'], ['documents', FolderOpen, 'Submitted Documents']].map(([tab, Icon, label]) => (
+                            {[
+                                ['info', User, 'Profile Info'], 
+                                ['documents', FolderOpen, 'Submitted Documents'],
+                                ['renewal', FileCheck, 'Renewal Details']
+                            ].map(([tab, Icon, label]) => (
                                 <button key={tab} onClick={() => setActiveTab(tab)}
                                     className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
                                     <Icon className="h-4 w-4" />{label}
@@ -638,6 +840,110 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                     })}
                                 </div>
                             )}
+
+                            {activeTab === 'renewal' && (
+                                <form onSubmit={handleSaveRenewal} className="space-y-5">
+                                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 space-y-4">
+                                        <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-200 pb-2 font-serif">Academic Enrollment</h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="flex items-center space-x-2 mt-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id="edit_is_enrolled_graduate"
+                                                    checked={renewalData.is_enrolled_graduate}
+                                                    onChange={e => setRenewalData(prev => ({ ...prev, is_enrolled_graduate: e.target.checked }))}
+                                                    className="rounded border-slate-300 text-maroon-800 focus:ring-maroon-800"
+                                                />
+                                                <label htmlFor="edit_is_enrolled_graduate" className="text-sm font-semibold text-slate-700">Enrolled in Graduate Studies</label>
+                                            </div>
+
+                                            <div className="flex items-center space-x-2 mt-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id="edit_is_new_hire"
+                                                    checked={renewalData.is_new_hire}
+                                                    onChange={e => setRenewalData(prev => ({ ...prev, is_new_hire: e.target.checked }))}
+                                                    className="rounded border-slate-300 text-maroon-800 focus:ring-maroon-800"
+                                                />
+                                                <label htmlFor="edit_is_new_hire" className="text-sm font-semibold text-slate-700">Newly Hired Faculty</label>
+                                            </div>
+                                        </div>
+
+                                        {renewalData.is_enrolled_graduate && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Graduate School</label>
+                                                    <Input
+                                                        type="text"
+                                                        value={renewalData.grad_school_name}
+                                                        onChange={e => setRenewalData(prev => ({ ...prev, grad_school_name: e.target.value }))}
+                                                        placeholder="e.g. PUP Graduate School"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Program</label>
+                                                    <Input
+                                                        type="text"
+                                                        value={renewalData.grad_program}
+                                                        onChange={e => setRenewalData(prev => ({ ...prev, grad_program: e.target.value }))}
+                                                        placeholder="e.g. DBA"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Teaching Load / Status Note</label>
+                                        <Input
+                                            type="text"
+                                            value={renewalData.teaching_load_status}
+                                            onChange={e => setRenewalData(prev => ({ ...prev, teaching_load_status: e.target.value }))}
+                                            placeholder="e.g. No teaching load"
+                                        />
+                                    </div>
+
+                                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 space-y-3">
+                                        <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-200 pb-2 font-serif">Semester Evaluations</h4>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {[
+                                                ['2023-2024 Sem 1', 'eval_2324_sem1'],
+                                                ['2023-2024 Sem 2', 'eval_2324_sem2'],
+                                                ['2024-2025 Sem 1', 'eval_2425_sem1'],
+                                                ['2024-2025 Sem 2', 'eval_2425_sem2'],
+                                            ].map(([label, field]) => (
+                                                <div key={field}>
+                                                    <span className="text-xs text-slate-500 font-semibold">{label} Rating</span>
+                                                    <select
+                                                        className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maroon-800 bg-white"
+                                                        value={renewalData[field]}
+                                                        onChange={e => setRenewalData(prev => ({ ...prev, [field]: e.target.value }))}
+                                                    >
+                                                        <option value="">-- Select Rating --</option>
+                                                        <option value="Outstanding">Outstanding</option>
+                                                        <option value="Very Satisfactory">Very Satisfactory</option>
+                                                        <option value="Satisfactory">Satisfactory</option>
+                                                        <option value="Unsatisfactory">Unsatisfactory</option>
+                                                        <option value="Poor">Poor</option>
+                                                        <option value="No teaching load">No teaching load</option>
+                                                        <option value="New Faculty">New Faculty</option>
+                                                    </select>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end pt-2">
+                                        <Button
+                                            type="submit"
+                                            disabled={isSavingRenewal}
+                                            className="bg-maroon-800 hover:bg-maroon-900 text-white w-full sm:w-auto"
+                                        >
+                                            {isSavingRenewal ? 'Saving...' : 'Save Renewal Details'}
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -691,6 +997,182 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                     </div>
                 </div>
             )}
+            {/* ── Import from Excel Modal ── */}
+            {showImportModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-emerald-100 text-emerald-700 rounded-full">
+                                    <FileSpreadsheet className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-serif font-bold text-slate-800">Import from Excel</h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">Upload an .xlsx file to create faculty accounts in bulk.</p>
+                                </div>
+                            </div>
+                            <button onClick={() => { setShowImportModal(false); setImportFile(null); }} className="text-slate-400 hover:text-slate-700">
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-5">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p className="text-sm text-blue-800 font-medium mb-2">Step 1: Download the template</p>
+                                <p className="text-xs text-blue-700 mb-3">Download the Excel template, fill in the faculty details, then upload it below.</p>
+                                <a
+                                    href={route('admin.faculty.import_template')}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                                >
+                                    <Download className="h-4 w-4" /> Download Template
+                                </a>
+                            </div>
+
+                            <div>
+                                <p className="text-sm text-slate-700 font-semibold mb-2">Step 2: Upload your filled Excel file</p>
+                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                                    {importFile ? (
+                                        <div className="flex items-center gap-2 text-emerald-700">
+                                            <CheckCircle2 className="h-5 w-5" />
+                                            <span className="text-sm font-medium">{importFile.name}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center text-slate-400">
+                                            <Upload className="h-8 w-8 mb-1" />
+                                            <span className="text-sm font-medium">Click to select .xlsx file</span>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        accept=".xlsx,.xls"
+                                        className="hidden"
+                                        onChange={e => setImportFile(e.target.files[0] || null)}
+                                    />
+                                </label>
+                            </div>
+                        </div>
+                        <div className="p-6 pt-0 flex justify-end gap-3 shrink-0">
+                            <Button variant="outline" onClick={() => { setShowImportModal(false); setImportFile(null); }}>Cancel</Button>
+                            <Button
+                                disabled={!importFile || isImporting}
+                                className="bg-emerald-700 hover:bg-emerald-800 text-white"
+                                onClick={() => {
+                                    setIsImporting(true);
+                                    const formData = new FormData();
+                                    formData.append('file', importFile);
+                                    router.post(route('admin.faculty.import'), formData, {
+                                        forceFormData: true,
+                                        onSuccess: () => {
+                                            setShowImportModal(false);
+                                            setImportFile(null);
+                                            setIsImporting(false);
+                                            setShowImportResults(true);
+                                        },
+                                        onError: () => {
+                                            setIsImporting(false);
+                                        },
+                                    });
+                                }}
+                            >
+                                <Upload className="h-4 w-4 mr-2" />
+                                {isImporting ? 'Importing...' : 'Import Faculty'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Bulk Import Results Modal ── */}
+            {showImportResults && bulkImportResult && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-emerald-100 text-emerald-700 rounded-full">
+                                    <CheckCircle2 className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-serif font-bold text-slate-800">Import Complete</h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                        {bulkImportResult.created.length} account(s) created
+                                        {bulkImportResult.skipped.length > 0 && `, ${bulkImportResult.skipped.length} row(s) skipped`}
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowImportResults(false)} className="text-slate-400 hover:text-slate-700">
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+                        <div className="overflow-y-auto flex-1 p-6 space-y-5">
+                            {/* Created Accounts */}
+                            {bulkImportResult.created.length > 0 && (
+                                <div>
+                                    <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <CheckCircle2 className="h-4 w-4" /> Created Accounts ({bulkImportResult.created.length})
+                                    </h4>
+                                    <div className="border border-emerald-200 rounded-lg overflow-hidden">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-emerald-50 text-emerald-800">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left font-semibold">Name</th>
+                                                    <th className="px-4 py-2 text-left font-semibold">Email</th>
+                                                    <th className="px-4 py-2 text-left font-semibold">Temp Password</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-emerald-100">
+                                                {bulkImportResult.created.map((item, i) => (
+                                                    <tr key={i} className="bg-white">
+                                                        <td className="px-4 py-2 font-medium text-slate-800">{item.name}</td>
+                                                        <td className="px-4 py-2 text-slate-600">{item.email}</td>
+                                                        <td className="px-4 py-2">
+                                                            <code className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded font-mono text-xs">{item.password}</code>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-2 italic">Credentials are also saved to credentials.txt in the project folder.</p>
+                                </div>
+                            )}
+
+                            {/* Skipped Rows */}
+                            {bulkImportResult.skipped.length > 0 && (
+                                <div>
+                                    <h4 className="text-sm font-bold text-amber-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <AlertCircle className="h-4 w-4" /> Skipped Rows ({bulkImportResult.skipped.length})
+                                    </h4>
+                                    <div className="border border-amber-200 rounded-lg overflow-hidden">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-amber-50 text-amber-800">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left font-semibold">Row</th>
+                                                    <th className="px-4 py-2 text-left font-semibold">Name</th>
+                                                    <th className="px-4 py-2 text-left font-semibold">Reason</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-amber-100">
+                                                {bulkImportResult.skipped.map((item, i) => (
+                                                    <tr key={i} className="bg-white">
+                                                        <td className="px-4 py-2 text-slate-600">{item.row}</td>
+                                                        <td className="px-4 py-2 font-medium text-slate-800">{item.name}</td>
+                                                        <td className="px-4 py-2 text-amber-700 text-xs">{item.reason}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-6 pt-3 border-t border-slate-100 flex justify-end shrink-0">
+                            <Button onClick={() => setShowImportResults(false)} className="bg-slate-800 hover:bg-slate-900 text-white">
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </AuthenticatedLayout>
     );
 }
