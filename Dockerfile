@@ -68,4 +68,4 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 
 # Reset Entrypoint, run caching and migrations on boot, normalize permissions, and start Apache
 ENTRYPOINT []
-CMD php artisan config:clear && php artisan route:cache && php artisan view:cache && php artisan migrate --force && chown -R www-data:www-data /var/www/html/database /var/www/html/storage && apache2-foreground
+CMD php artisan config:clear && php artisan route:cache && php artisan view:cache && php artisan migrate --seed --force && chown -R www-data:www-data /var/www/html/database /var/www/html/storage && apache2-foreground
