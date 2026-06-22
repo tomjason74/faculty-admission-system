@@ -527,7 +527,7 @@ export default function Dashboard({ applications, approvedFaculty, rejectedAppli
                         <h2 className="text-2xl font-serif font-bold text-slate-800">Admin Dashboard</h2>
                         <p className="text-sm text-slate-500 mt-1">Manage faculty applications and compliance.</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
                         <div className="relative w-full md:w-64">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <Search className="h-4 w-4 text-slate-400" />
@@ -540,29 +540,31 @@ export default function Dashboard({ applications, approvedFaculty, rejectedAppli
                                 className="block w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-maroon-800 focus:border-maroon-800 sm:text-sm bg-white shadow-sm"
                             />
                         </div>
-                        <Button
-                            onClick={() => router.get(route('admin.reports.renewal'))}
-                            variant="outline"
-                            className="border-slate-300 text-slate-700 hover:bg-slate-50 shrink-0"
-                        >
-                            <FileText className="h-4 w-4 mr-2 text-slate-500" />
-                            Generate Renewal Report
-                        </Button>
-                        <Button
-                            onClick={() => setShowImportModal(true)}
-                            variant="outline"
-                            className="border-slate-300 text-slate-700 hover:bg-slate-50 shrink-0"
-                        >
-                            <Upload className="h-4 w-4 mr-2 text-slate-500" />
-                            Import from Excel
-                        </Button>
-                        <Button
-                            onClick={() => setShowAddModal(true)}
-                            className="bg-maroon-800 hover:bg-maroon-900 text-white shrink-0"
-                        >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Add Faculty
-                        </Button>
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+                            <Button
+                                onClick={() => router.get(route('admin.reports.renewal'))}
+                                variant="outline"
+                                className="border-slate-300 text-slate-700 hover:bg-slate-50 w-full sm:w-auto justify-center"
+                            >
+                                <FileText className="h-4 w-4 mr-2 text-slate-500 shrink-0" />
+                                <span className="truncate">Renewal Report</span>
+                            </Button>
+                            <Button
+                                onClick={() => setShowImportModal(true)}
+                                variant="outline"
+                                className="border-slate-300 text-slate-700 hover:bg-slate-50 w-full sm:w-auto justify-center"
+                            >
+                                <Upload className="h-4 w-4 mr-2 text-slate-500 shrink-0" />
+                                <span className="truncate">Import Excel</span>
+                            </Button>
+                            <Button
+                                onClick={() => setShowAddModal(true)}
+                                className="bg-maroon-800 hover:bg-maroon-900 text-white w-full sm:w-auto justify-center font-semibold"
+                            >
+                                <UserPlus className="h-4 w-4 mr-2 shrink-0" />
+                                <span className="truncate">Add Faculty</span>
+                            </Button>
+                        </div>
                     </div>
                 </div>
             }
@@ -814,7 +816,7 @@ export default function Dashboard({ applications, approvedFaculty, rejectedAppli
                                 <CardTitle className="text-xl font-serif text-slate-800">Faculty Directory & Compliance</CardTitle>
                                 <CardDescription>Track onboarding compliance for active and archived faculty.</CardDescription>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -829,31 +831,31 @@ export default function Dashboard({ applications, approvedFaculty, rejectedAppli
                                             })
                                             .catch(() => setIsCheckingBatch(false));
                                     }}
-                                    className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                                    className="border-blue-200 text-blue-700 hover:bg-blue-50 w-full sm:w-auto justify-center"
                                 >
-                                    <FolderDown className="h-4 w-4 mr-1.5" />
+                                    <FolderDown className="h-4 w-4 mr-1.5 shrink-0" />
                                     {isCheckingBatch ? 'Checking...' : 'Batch Download'}
                                 </Button>
-                            <div className="flex bg-slate-100 p-1 rounded-lg">
-                                <button
-                                    onClick={() => handleDirectoryTabChange('active')}
-                                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${directoryTab === 'active' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                >
-                                    Active
-                                </button>
-                                <button
-                                    onClick={() => handleDirectoryTabChange('archived')}
-                                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${directoryTab === 'archived' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                >
-                                    Archived
-                                </button>
-                                <button
-                                    onClick={() => handleDirectoryTabChange('rejected')}
-                                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${directoryTab === 'rejected' ? 'bg-white text-red-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                >
-                                    Rejected ({(rejectedApplications ?? []).length})
-                                </button>
-                            </div>
+                                <div className="flex bg-slate-100 p-1 rounded-lg w-full sm:w-auto justify-between">
+                                    <button
+                                        onClick={() => handleDirectoryTabChange('active')}
+                                        className={`flex-1 sm:flex-initial text-center px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors ${directoryTab === 'active' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Active
+                                    </button>
+                                    <button
+                                        onClick={() => handleDirectoryTabChange('archived')}
+                                        className={`flex-1 sm:flex-initial text-center px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors ${directoryTab === 'archived' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Archived
+                                    </button>
+                                    <button
+                                        onClick={() => handleDirectoryTabChange('rejected')}
+                                        className={`flex-1 sm:flex-initial text-center px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors ${directoryTab === 'rejected' ? 'bg-white text-red-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Rejected ({(rejectedApplications ?? []).length})
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div className="mt-3 flex flex-col md:flex-row items-center gap-3">
@@ -1273,15 +1275,15 @@ export default function Dashboard({ applications, approvedFaculty, rejectedAppli
                             </button>
                         </div>
 
-                        <div className="flex border-b border-slate-100 shrink-0 px-6">
+                        <div className="flex border-b border-slate-100 shrink-0 px-6 overflow-x-auto whitespace-nowrap scrollbar-none">
                             {[
                                 ['info', User, 'Profile Info'], 
                                 ['documents', FolderOpen, 'Submitted Documents'],
                                 ['renewal', FileCheck, 'Renewal Details']
                             ].map(([tab, Icon, label]) => (
                                 <button key={tab} onClick={() => setActiveTab(tab)}
-                                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-                                    <Icon className="h-4 w-4" />{label}
+                                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors shrink-0 ${activeTab === tab ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+                                    <Icon className="h-4 w-4 shrink-0" />{label}
                                 </button>
                             ))}
                         </div>

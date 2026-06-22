@@ -21,32 +21,33 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
                 {/* Top Navigation */}
                 <header className="fixed inset-x-0 top-0 z-50 bg-white/85 backdrop-blur-md shadow-sm border-b border-slate-200/50">
-                    <nav className="flex items-center justify-between p-6 lg:px-8" aria-label="Global">
+                    <nav className="flex items-center justify-between p-4 sm:p-6 lg:px-8" aria-label="Global">
                         <div className="flex lg:flex-1">
                             <Link href="/" className="-m-1.5 p-1.5 flex items-center">
-                                <img src="/images/pup-logo.png" alt="PUP Logo" className="h-10 w-auto mr-3" />
+                                <img src="/images/pup-logo.png" alt="PUP Logo" className="h-10 w-auto mr-2 sm:mr-3" />
                                 <div className="leading-tight">
-                                    <span className="block font-serif font-bold text-base tracking-wide text-maroon-900">Polytechnic University</span>
-                                    <span className="block text-xs text-maroon-700 font-medium tracking-widest uppercase">of the Philippines</span>
+                                    <span className="hidden sm:block font-serif font-bold text-base tracking-wide text-maroon-900">Polytechnic University</span>
+                                    <span className="hidden sm:block text-xs text-maroon-700 font-medium tracking-widest uppercase">of the Philippines</span>
+                                    <span className="block sm:hidden font-serif font-bold text-base tracking-wide text-maroon-900">PUP Portal</span>
                                 </div>
                             </Link>
                         </div>
                         
-                        <div className="flex flex-1 justify-end items-center gap-4">
+                        <div className="flex flex-1 justify-end items-center gap-3 sm:gap-4">
                             {auth.user ? (
                                 <Link href={route('dashboard')}>
-                                    <Button className="bg-maroon-800 hover:bg-maroon-900 text-white rounded-full px-6">
-                                        Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                                    <Button className="bg-maroon-800 hover:bg-maroon-900 text-white rounded-full px-4 sm:px-6 text-xs sm:text-sm">
+                                        Go to Dashboard <ArrowRight className="ml-1 sm:ml-2 h-4 w-4" />
                                     </Button>
                                 </Link>
                             ) : (
                                 <>
-                                    <Link href={route('login')} className="text-sm font-semibold leading-6 text-slate-800 hover:text-maroon-800 transition-colors">
+                                    <Link href={route('login')} className="text-xs sm:text-sm font-semibold leading-6 text-slate-800 hover:text-maroon-800 transition-colors">
                                         Log in
                                     </Link>
                                     <Link href={route('apply.create')}>
-                                        <Button className="bg-maroon-800 hover:bg-maroon-900 text-white rounded-full px-6">
-                                            Apply Now <ArrowRight className="ml-2 h-4 w-4" />
+                                        <Button className="bg-maroon-800 hover:bg-maroon-900 text-white rounded-full px-4 sm:px-6 text-xs sm:text-sm">
+                                            Apply Now <ArrowRight className="ml-1 sm:ml-2 h-4 w-4" />
                                         </Button>
                                     </Link>
                                 </>

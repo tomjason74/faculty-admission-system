@@ -180,26 +180,26 @@ export default function RenewalReport({ faculty, departments, signatories = [] }
             <Head title="Preview Renewal Report" />
 
             {/* ── Control Panel (Hidden in Print) ── */}
-            <div className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm print:hidden">
+            <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 shadow-sm print:hidden">
                 <div className="max-w-5xl mx-auto flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
                             <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 onClick={() => router.get(route('admin.dashboard'))}
-                                className="text-slate-600 hover:text-slate-900"
+                                className="text-slate-600 hover:text-slate-900 w-full sm:w-auto justify-start sm:justify-center px-0 sm:px-3"
                             >
-                                <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Dashboard
+                                <ArrowLeft className="h-4 w-4 mr-1.5 shrink-0" /> Back to Dashboard
                             </Button>
-                            <h2 className="text-xl font-serif font-bold text-slate-800">Renewal Report Generator</h2>
+                            <h2 className="text-lg sm:text-xl font-serif font-bold text-slate-800">Renewal Report</h2>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Button onClick={handleSaveSettings} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0 shadow-sm">
+                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                            <Button onClick={handleSaveSettings} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0 shadow-sm flex-1 sm:flex-none justify-center">
                                 <Save className="h-4 w-4 mr-2" /> Save Signatories
                             </Button>
-                            <Button onClick={handlePrint} className="bg-[#7A1A2E] hover:bg-[#5C1322] text-white shrink-0 shadow-sm">
-                                <Printer className="h-4 w-4 mr-2" /> Print / Save as PDF
+                            <Button onClick={handlePrint} className="bg-[#7A1A2E] hover:bg-[#5C1322] text-white shrink-0 shadow-sm flex-1 sm:flex-none justify-center">
+                                <Printer className="h-4 w-4 mr-2" /> Print / PDF
                             </Button>
                         </div>
                     </div>
@@ -309,7 +309,8 @@ export default function RenewalReport({ faculty, departments, signatories = [] }
             </div>
 
             {/* ── Document Page (Styled like A4 Letter) ── */}
-            <div className="max-w-5xl mx-auto my-8 p-12 bg-white shadow-md border border-slate-200 print:my-0 print:p-0 print:shadow-none print:border-none font-serif text-[11pt] leading-normal">
+            <div className="w-full overflow-x-auto print:overflow-visible">
+                <div className="min-w-[800px] max-w-5xl mx-auto my-8 p-6 sm:p-12 bg-white shadow-md border border-slate-200 print:my-0 print:p-0 print:shadow-none print:border-none print:min-w-0 font-serif text-[11pt] leading-normal">
                 
                 {/* Official University Letterhead */}
                 <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-6 font-serif">
@@ -446,8 +447,9 @@ export default function RenewalReport({ faculty, departments, signatories = [] }
                         </div>
                     </div>
                 </div>
-
             </div>
+
+        </div>
 
             {/* Print Media Specific CSS Styling */}
             <style>{`

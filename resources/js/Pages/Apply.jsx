@@ -55,16 +55,17 @@ export default function Apply({ departments }) {
 
             {/* Top Bar */}
             <header className="bg-maroon-900 text-white">
-                <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <Link href="/" className="flex items-center space-x-3">
+                <div className="max-w-5xl mx-auto px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
+                    <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
                         <img src="/images/pup-logo.png" alt="PUP Logo" className="h-10 w-auto" />
                         <div className="leading-tight">
-                            <span className="block font-serif font-bold text-base tracking-wide text-white">Polytechnic University</span>
-                            <span className="block text-xs text-gold-400 font-medium tracking-widest uppercase">of the Philippines</span>
+                            <span className="hidden sm:block font-serif font-bold text-base tracking-wide text-white">Polytechnic University</span>
+                            <span className="hidden sm:block text-xs text-gold-400 font-medium tracking-widest uppercase">of the Philippines</span>
+                            <span className="block sm:hidden font-serif font-bold text-base tracking-wide text-white">PUP Portal</span>
                         </div>
                     </Link>
-                    <Link href={route('login')} className="text-sm text-white/80 hover:text-white flex items-center gap-1 transition-colors">
-                        Already applied? Sign in <ArrowRight className="h-4 w-4" />
+                    <Link href={route('login')} className="text-xs sm:text-sm text-white/80 hover:text-white flex items-center gap-1 transition-colors shrink-0">
+                        <span className="hidden sm:inline">Already applied? </span>Sign in <ArrowRight className="h-4 w-4 shrink-0" />
                     </Link>
                 </div>
             </header>
