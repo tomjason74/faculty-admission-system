@@ -17,6 +17,9 @@ class DashboardController extends Controller
             'medical_certificates' => $profile ? $profile->getMedia('medical_certificates')->map(fn($m) => ['id' => $m->id, 'file_name' => $m->file_name]) : [],
             'clearances' => $profile ? $profile->getMedia('clearances')->map(fn($m) => ['id' => $m->id, 'file_name' => $m->file_name]) : [],
             'ids' => $profile ? $profile->getMedia('ids')->map(fn($m) => ['id' => $m->id, 'file_name' => $m->file_name]) : [],
+            'nbi_clearance' => $profile ? $profile->getMedia('nbi_clearance')->map(fn($m) => ['id' => $m->id, 'file_name' => $m->file_name]) : [],
+            'government_ids' => $profile ? $profile->getMedia('government_ids')->map(fn($m) => ['id' => $m->id, 'file_name' => $m->file_name]) : [],
+            'employment_certificate' => $profile ? $profile->getMedia('employment_certificate')->map(fn($m) => ['id' => $m->id, 'file_name' => $m->file_name]) : [],
         ];
 
         $classRecords = $profile ? $profile->getMedia('class_records')->map(function ($m) {
@@ -38,7 +41,7 @@ class DashboardController extends Controller
     public function storeDocument(Request $request)
     {
         $request->validate([
-            'collection' => 'required|in:medical_certificates,clearances,ids',
+            'collection' => 'required|in:medical_certificates,clearances,ids,nbi_clearance,government_ids,employment_certificate',
             'file' => 'required|file|max:10240',
         ]);
 
@@ -48,7 +51,7 @@ class DashboardController extends Controller
             return redirect()->back()->with('error', 'Profile not found.');
         }
 
-        $profile->addMediaFromRequest('file')->toMediaCollection($request->collection, 'local');
+        $profile->addMediaFromRequest('file')->toMediaCollection($request->collection, env('MEDIA_DISK', 'local'));
 
         return redirect()->back()->with('success', 'Document uploaded successfully.');
     }
@@ -72,7 +75,7 @@ class DashboardController extends Controller
                 'semester' => $request->semester,
                 'course_code' => $request->course_code,
             ])
-            ->toMediaCollection('class_records', 'local');
+            ->toMediaCollection('class_records', env('MEDIA_DISK', 'local'));
 
         return redirect()->back()->with('success', 'Class record uploaded successfully.');
     }

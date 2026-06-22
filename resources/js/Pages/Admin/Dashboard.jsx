@@ -7,10 +7,10 @@ import { Input } from '@/Components/ui/input';
 import {
     BadgeCheck, XCircle, FileText, Download, Search, Eye, X,
     FolderOpen, FileCheck, FileMinus, User, UserPlus, KeyRound, Copy, Check, Trash2, ShieldAlert, CheckCircle2,
-    Upload, FileSpreadsheet, AlertCircle
+    Upload, FileSpreadsheet, AlertCircle, FolderDown, ArrowUpDown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown
 } from 'lucide-react';
 
-export default function Dashboard({ applications, approvedFaculty, departments, stats }) {
+export default function Dashboard({ applications, approvedFaculty, rejectedApplications, departments, stats }) {
     const { props } = usePage();
     const credential = props.credential ?? null;
     const bulkImportResult = props.bulk_import_result ?? null;
@@ -29,6 +29,26 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
     const [showImportResults, setShowImportResults] = useState(!!bulkImportResult);
     const [importFile, setImportFile] = useState(null);
     const [isImporting, setIsImporting] = useState(false);
+    const [directorySearch, setDirectorySearch] = useState('');
+    const [confirmAction, setConfirmAction] = useState(null);
+    const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+    const [batchCheckResult, setBatchCheckResult] = useState(null);
+    const [isCheckingBatch, setIsCheckingBatch] = useState(false);
+
+    // Sorting, Filtering, and Pagination State for Pending Applications
+    const [pendingSortField, setPendingSortField] = useState('name');
+    const [pendingSortDirection, setPendingSortDirection] = useState('asc');
+    const [pendingDeptFilter, setPendingDeptFilter] = useState('');
+    const [pendingCurrentPage, setPendingCurrentPage] = useState(1);
+    const [pendingPageSize, setPendingPageSize] = useState(10);
+
+    // Sorting, Filtering, and Pagination State for Faculty Directory
+    const [directorySortField, setDirectorySortField] = useState('name');
+    const [directorySortDirection, setDirectorySortDirection] = useState('asc');
+    const [directoryDeptFilter, setDirectoryDeptFilter] = useState('');
+    const [directoryComplianceFilter, setDirectoryComplianceFilter] = useState('');
+    const [directoryCurrentPage, setDirectoryCurrentPage] = useState(1);
+    const [directoryPageSize, setDirectoryPageSize] = useState(10);
 
     const [renewalData, setRenewalData] = useState({
         is_enrolled_graduate: false,
@@ -120,22 +140,28 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
         password: '',
     });
 
-    const handleApprove = (id) => {
-        if (confirm('Are you sure you want to approve this application? A temporary password will be generated.')) {
-            setActionId(id);
-            post(route('admin.applications.approve', id), {
-                onFinish: () => setActionId(null),
-            });
-        }
+    const resetPasswordForm = useForm({
+        password: '',
+    });
+
+    const handleApprove = (id, name) => {
+        setConfirmAction({ type: 'approve', id, name });
     };
 
-    const handleReject = (id) => {
-        if (confirm('Are you sure you want to reject this application?')) {
-            setActionId(id);
-            post(route('admin.applications.reject', id), {
-                onFinish: () => setActionId(null),
-            });
-        }
+    const handleReject = (id, name) => {
+        setConfirmAction({ type: 'reject', id, name });
+    };
+
+    const executeConfirmAction = () => {
+        if (!confirmAction) return;
+        setActionId(confirmAction.id);
+        const routeName = confirmAction.type === 'approve' ? 'admin.applications.approve' : 'admin.applications.reject';
+        post(route(routeName, confirmAction.id), {
+            onFinish: () => {
+                setActionId(null);
+                setConfirmAction(null);
+            },
+        });
     };
 
     const handleAddFaculty = (e) => {
@@ -211,22 +237,287 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
         }
     };
 
-    const filterData = (data) => {
-        if (!searchQuery) return data;
-        const q = searchQuery.toLowerCase();
-        return data.filter(item =>
-            item.user.name.toLowerCase().includes(q) ||
-            item.user.email.toLowerCase().includes(q) ||
-            (item.department?.name && item.department.name.toLowerCase().includes(q))
-        );
+    // Helper handlers to reset pagination to page 1 on filter changes
+    const handleSearchQueryChange = (e) => {
+        setSearchQuery(e.target.value);
+        setPendingCurrentPage(1);
     };
 
-    const filteredApplications = filterData(applications);
-    const filteredApproved = filterData(approvedFaculty);
-    
-    const activeFacultyList = filteredApproved.filter(f => f.status === 'approved');
-    const archivedFacultyList = filteredApproved.filter(f => f.status === 'inactive');
-    const currentDirectoryList = directoryTab === 'active' ? activeFacultyList : archivedFacultyList;
+    const handlePendingDeptFilterChange = (val) => {
+        setPendingDeptFilter(val);
+        setPendingCurrentPage(1);
+    };
+
+    const handleDirectorySearchChange = (e) => {
+        setDirectorySearch(e.target.value);
+        setDirectoryCurrentPage(1);
+    };
+
+    const handleDirectoryDeptFilterChange = (val) => {
+        setDirectoryDeptFilter(val);
+        setDirectoryCurrentPage(1);
+    };
+
+    const handleDirectoryComplianceFilterChange = (val) => {
+        setDirectoryComplianceFilter(val);
+        setDirectoryCurrentPage(1);
+    };
+
+    const handleDirectoryTabChange = (tab) => {
+        setDirectoryTab(tab);
+        setDirectoryCurrentPage(1);
+    };
+
+    // --- Data Processing Pipeline for Pending Applications ---
+    const processedPending = (applications ?? []).filter(item => {
+        const matchesSearch = !searchQuery ? true : (
+            item.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.department?.name && item.department.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (item.specialization && item.specialization.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+        const matchesDept = !pendingDeptFilter ? true : String(item.department_id) === String(pendingDeptFilter);
+        return matchesSearch && matchesDept;
+    });
+
+    processedPending.sort((a, b) => {
+        let valA = '';
+        let valB = '';
+        if (pendingSortField === 'name') {
+            valA = (a.user?.name ?? '').toLowerCase();
+            valB = (b.user?.name ?? '').toLowerCase();
+        } else if (pendingSortField === 'email') {
+            valA = (a.user?.email ?? '').toLowerCase();
+            valB = (b.user?.email ?? '').toLowerCase();
+        } else if (pendingSortField === 'department') {
+            valA = (a.department?.name ?? '').toLowerCase();
+            valB = (b.department?.name ?? '').toLowerCase();
+        } else if (pendingSortField === 'specialization') {
+            valA = (a.specialization ?? '').toLowerCase();
+            valB = (b.specialization ?? '').toLowerCase();
+        }
+
+        if (valA < valB) return pendingSortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return pendingSortDirection === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const totalPendingCount = processedPending.length;
+    const pendingPageLimit = pendingPageSize === 'all' ? totalPendingCount : parseInt(pendingPageSize);
+    const totalPendingPages = pendingPageLimit === 0 ? 1 : Math.ceil(totalPendingCount / pendingPageLimit);
+    const safePendingCurrentPage = Math.min(pendingCurrentPage, totalPendingPages || 1);
+    const filteredApplications = pendingPageSize === 'all'
+        ? processedPending
+        : processedPending.slice((safePendingCurrentPage - 1) * pendingPageLimit, safePendingCurrentPage * pendingPageLimit);
+
+    // --- Data Processing Pipeline for Faculty Directory ---
+    let baseDirectoryList = [];
+    if (directoryTab === 'active') {
+        baseDirectoryList = (approvedFaculty ?? []).filter(f => f.status === 'approved');
+    } else if (directoryTab === 'archived') {
+        baseDirectoryList = (approvedFaculty ?? []).filter(f => f.status === 'inactive');
+    } else if (directoryTab === 'rejected') {
+        baseDirectoryList = rejectedApplications ?? [];
+    }
+
+    const processedDirectory = baseDirectoryList.filter(item => {
+        const matchesSearch = !directorySearch ? true : (
+            item.user.name.toLowerCase().includes(directorySearch.toLowerCase()) ||
+            item.user.email.toLowerCase().includes(directorySearch.toLowerCase()) ||
+            (item.department?.name && item.department.name.toLowerCase().includes(directorySearch.toLowerCase()))
+        );
+        const matchesDept = !directoryDeptFilter ? true : String(item.department_id) === String(directoryDeptFilter);
+        
+        let matchesCompliance = true;
+        if (directoryComplianceFilter) {
+            if (directoryComplianceFilter === 'compliant') {
+                matchesCompliance = item.is_compliant === true;
+            } else if (directoryComplianceFilter === 'in_progress') {
+                matchesCompliance = item.compliance_percentage > 0 && !item.is_compliant;
+            } else if (directoryComplianceFilter === 'not_started') {
+                matchesCompliance = item.compliance_percentage === 0;
+            }
+        }
+        return matchesSearch && matchesDept && matchesCompliance;
+    });
+
+    processedDirectory.sort((a, b) => {
+        let valA = '';
+        let valB = '';
+        if (directorySortField === 'name') {
+            valA = (a.user?.name ?? '').toLowerCase();
+            valB = (b.user?.name ?? '').toLowerCase();
+        } else if (directorySortField === 'email') {
+            valA = (a.user?.email ?? '').toLowerCase();
+            valB = (b.user?.email ?? '').toLowerCase();
+        } else if (directorySortField === 'department') {
+            valA = (a.department?.name ?? '').toLowerCase();
+            valB = (b.department?.name ?? '').toLowerCase();
+        } else if (directorySortField === 'progress') {
+            const progressA = a.compliance_percentage ?? 0;
+            const progressB = b.compliance_percentage ?? 0;
+            return directorySortDirection === 'asc' ? progressA - progressB : progressB - progressA;
+        } else if (directorySortField === 'compliance_status') {
+            const getComplianceOrder = (x) => {
+                if (x.is_compliant) return 3;
+                if (x.compliance_percentage > 0) return 2;
+                return 1;
+            };
+            const orderA = getComplianceOrder(a);
+            const orderB = getComplianceOrder(b);
+            return directorySortDirection === 'asc' ? orderA - orderB : orderB - orderA;
+        }
+
+        if (valA < valB) return directorySortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return directorySortDirection === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const totalDirectoryCount = processedDirectory.length;
+    const directoryPageLimit = directoryPageSize === 'all' ? totalDirectoryCount : parseInt(directoryPageSize);
+    const totalDirectoryPages = directoryPageLimit === 0 ? 1 : Math.ceil(totalDirectoryCount / directoryPageLimit);
+    const safeDirectoryCurrentPage = Math.min(directoryCurrentPage, totalDirectoryPages || 1);
+    const currentDirectoryList = directoryPageSize === 'all'
+        ? processedDirectory
+        : processedDirectory.slice((safeDirectoryCurrentPage - 1) * directoryPageLimit, safeDirectoryCurrentPage * directoryPageLimit);
+    const handlePendingSort = (field) => {
+        if (pendingSortField === field) {
+            setPendingSortDirection(pendingSortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setPendingSortField(field);
+            setPendingSortDirection('asc');
+        }
+        setPendingCurrentPage(1);
+    };
+
+    const handleDirectorySort = (field) => {
+        if (directorySortField === field) {
+            setDirectorySortDirection(directorySortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setDirectorySortField(field);
+            setDirectorySortDirection('asc');
+        }
+        setDirectoryCurrentPage(1);
+    };
+    const renderPagination = (currentPage, totalPages, totalCount, pageSize, setPageSize, setCurrentPage) => {
+        if (totalCount === 0) return null;
+
+        const limit = pageSize === 'all' ? totalCount : parseInt(pageSize);
+        const startEntry = totalCount === 0 ? 0 : (currentPage - 1) * limit + 1;
+        const endEntry = pageSize === 'all' ? totalCount : Math.min(currentPage * limit, totalCount);
+
+        // Generate visible page numbers
+        const pageNumbers = [];
+        const maxVisible = 5;
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+        if (endPage - startPage < maxVisible - 1) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers.push(i);
+        }
+
+        return (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-100 bg-slate-50/30">
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <span>Show</span>
+                    <select
+                        value={pageSize}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setPageSize(val);
+                            setCurrentPage(1);
+                        }}
+                        className="px-2 py-1 border border-slate-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-maroon-800 text-xs font-semibold shadow-sm text-slate-700"
+                    >
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                    <span>entries</span>
+                    <span className="mx-2">|</span>
+                    <span>
+                        Showing <strong className="text-slate-800 font-semibold">{startEntry}</strong> to{' '}
+                        <strong className="text-slate-800 font-semibold">{endEntry}</strong> of{' '}
+                        <strong className="text-slate-800 font-semibold">{totalCount}</strong> entries
+                    </span>
+                </div>
+
+                {pageSize !== 'all' && totalPages > 1 && (
+                    <div className="flex items-center gap-1.5">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            className="h-8 w-8 p-0 border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        
+                        {startPage > 1 && (
+                            <>
+                                <button
+                                    onClick={() => setCurrentPage(1)}
+                                    className={`h-8 min-w-[32px] px-2 text-xs font-semibold rounded-md border transition-colors ${
+                                        currentPage === 1
+                                            ? 'bg-maroon-800 border-maroon-800 text-white'
+                                            : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                                    }`}
+                                >
+                                    1
+                                </button>
+                                {startPage > 2 && <span className="text-slate-400 text-xs px-1">...</span>}
+                            </>
+                        )}
+
+                        {pageNumbers.map(pageNum => (
+                            <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`h-8 min-w-[32px] px-2 text-xs font-semibold rounded-md border transition-colors ${
+                                    currentPage === pageNum
+                                        ? 'bg-maroon-800 border-maroon-800 text-white'
+                                        : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                                }`}
+                            >
+                                {pageNum}
+                            </button>
+                        ))}
+
+                        {endPage < totalPages && (
+                            <>
+                                {endPage < totalPages - 1 && <span className="text-slate-400 text-xs px-1">...</span>}
+                                <button
+                                    onClick={() => setCurrentPage(totalPages)}
+                                    className={`h-8 min-w-[32px] px-2 text-xs font-semibold rounded-md border transition-colors ${
+                                        currentPage === totalPages
+                                            ? 'bg-maroon-800 border-maroon-800 text-white'
+                                            : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                                    }`}
+                                >
+                                    {totalPages}
+                                </button>
+                            </>
+                        )}
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            className="h-8 w-8 p-0 border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <AuthenticatedLayout
@@ -243,9 +534,9 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                             </div>
                             <input
                                 type="text"
-                                placeholder="Search faculty..."
+                                placeholder="Search pending applications..."
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={handleSearchQueryChange}
                                 className="block w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-maroon-800 focus:border-maroon-800 sm:text-sm bg-white shadow-sm"
                             />
                         </div>
@@ -381,8 +672,36 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                 {/* Pending Applications Section */}
                 <Card className="border-slate-200 shadow-sm">
                     <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
-                        <CardTitle className="text-xl font-serif text-slate-800">Pending Applications</CardTitle>
-                        <CardDescription>Review and approve newly submitted faculty applications.</CardDescription>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <CardTitle className="text-xl font-serif text-slate-800">Pending Applications</CardTitle>
+                                <CardDescription>Review and approve newly submitted faculty applications.</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <select
+                                    value={pendingDeptFilter}
+                                    onChange={(e) => handlePendingDeptFilterChange(e.target.value)}
+                                    className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-maroon-800 bg-white shadow-sm font-sans"
+                                >
+                                    <option value="">All Departments</option>
+                                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                                </select>
+                                {(pendingDeptFilter || searchQuery) && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            setPendingDeptFilter('');
+                                            setPendingCurrentPage(1);
+                                        }}
+                                        className="text-slate-500 hover:text-maroon-800 text-xs py-1 h-8"
+                                    >
+                                        Clear
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent className="p-0">
                         {filteredApplications.length === 0 ? (
@@ -395,10 +714,46 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                 <table className="w-full text-left text-sm text-slate-600">
                                     <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-700">
                                         <tr>
-                                            <th className="px-6 py-4">Applicant Name</th>
-                                            <th className="px-6 py-4">Email</th>
-                                            <th className="px-6 py-4">Department</th>
-                                            <th className="px-6 py-4">Specialization</th>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group" onClick={() => handlePendingSort('name')}>
+                                                <div className="flex items-center gap-1">
+                                                    Applicant Name
+                                                    {pendingSortField === 'name' ? (
+                                                        pendingSortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-slate-700" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-700" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group" onClick={() => handlePendingSort('email')}>
+                                                <div className="flex items-center gap-1">
+                                                    Email
+                                                    {pendingSortField === 'email' ? (
+                                                        pendingSortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-slate-700" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-700" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group" onClick={() => handlePendingSort('department')}>
+                                                <div className="flex items-center gap-1">
+                                                    Department
+                                                    {pendingSortField === 'department' ? (
+                                                        pendingSortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-slate-700" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-700" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group" onClick={() => handlePendingSort('specialization')}>
+                                                <div className="flex items-center gap-1">
+                                                    Specialization
+                                                    {pendingSortField === 'specialization' ? (
+                                                        pendingSortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-slate-700" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-700" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
                                             <th className="px-6 py-4">CV</th>
                                             <th className="px-6 py-4 text-right">Actions</th>
                                         </tr>
@@ -427,10 +782,10 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                                     <Button variant="ghost" size="sm" onClick={() => handleSelectFaculty(app)} className="text-slate-600 hover:text-maroon-800">
                                                         <Eye className="h-4 w-4 mr-1.5" /> Details
                                                     </Button>
-                                                    <Button variant="outline" size="sm" onClick={() => handleApprove(app.id)} disabled={processing && actionId === app.id} className="border-green-200 text-green-700 hover:bg-green-50">
+                                                    <Button variant="outline" size="sm" onClick={() => handleApprove(app.id, app.user.name)} disabled={processing && actionId === app.id} className="border-green-200 text-green-700 hover:bg-green-50">
                                                         <BadgeCheck className="h-4 w-4 mr-1.5" /> Approve
                                                     </Button>
-                                                    <Button variant="outline" size="sm" onClick={() => handleReject(app.id)} disabled={processing && actionId === app.id} className="border-red-200 text-red-700 hover:bg-red-50">
+                                                    <Button variant="outline" size="sm" onClick={() => handleReject(app.id, app.user.name)} disabled={processing && actionId === app.id} className="border-red-200 text-red-700 hover:bg-red-50">
                                                         <XCircle className="h-4 w-4 mr-1.5" /> Reject
                                                     </Button>
                                                 </td>
@@ -439,6 +794,14 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                     </tbody>
                                 </table>
                             </div>
+                        )}
+                        {renderPagination(
+                            safePendingCurrentPage,
+                            totalPendingPages,
+                            totalPendingCount,
+                            pendingPageSize,
+                            setPendingPageSize,
+                            setPendingCurrentPage
                         )}
                     </CardContent>
                 </Card>
@@ -451,36 +814,206 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                 <CardTitle className="text-xl font-serif text-slate-800">Faculty Directory & Compliance</CardTitle>
                                 <CardDescription>Track onboarding compliance for active and archived faculty.</CardDescription>
                             </div>
+                            <div className="flex items-center gap-3">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={isCheckingBatch}
+                                    onClick={() => {
+                                        setIsCheckingBatch(true);
+                                        fetch(route('admin.faculty.batch_compliance'))
+                                            .then(res => res.json())
+                                            .then(data => {
+                                                setBatchCheckResult(data);
+                                                setIsCheckingBatch(false);
+                                            })
+                                            .catch(() => setIsCheckingBatch(false));
+                                    }}
+                                    className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                                >
+                                    <FolderDown className="h-4 w-4 mr-1.5" />
+                                    {isCheckingBatch ? 'Checking...' : 'Batch Download'}
+                                </Button>
                             <div className="flex bg-slate-100 p-1 rounded-lg">
                                 <button
-                                    onClick={() => setDirectoryTab('active')}
+                                    onClick={() => handleDirectoryTabChange('active')}
                                     className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${directoryTab === 'active' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
                                     Active
                                 </button>
                                 <button
-                                    onClick={() => setDirectoryTab('archived')}
+                                    onClick={() => handleDirectoryTabChange('archived')}
                                     className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${directoryTab === 'archived' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
                                     Archived
                                 </button>
+                                <button
+                                    onClick={() => handleDirectoryTabChange('rejected')}
+                                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${directoryTab === 'rejected' ? 'bg-white text-red-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Rejected ({(rejectedApplications ?? []).length})
+                                </button>
+                            </div>
+                            </div>
+                        </div>
+                        <div className="mt-3 flex flex-col md:flex-row items-center gap-3">
+                            <div className="relative flex-1 w-full">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <Input
+                                    type="text"
+                                    placeholder="Search faculty by name, email, or department..."
+                                    value={directorySearch}
+                                    onChange={handleDirectorySearchChange}
+                                    className="pl-9 w-full"
+                                />
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
+                                <select
+                                    value={directoryDeptFilter}
+                                    onChange={(e) => handleDirectoryDeptFilterChange(e.target.value)}
+                                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maroon-800 bg-white shadow-sm font-sans flex-1 md:flex-initial min-w-[150px]"
+                                >
+                                    <option value="">All Departments</option>
+                                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                                </select>
+                                {directoryTab !== 'rejected' && (
+                                    <select
+                                        value={directoryComplianceFilter}
+                                        onChange={(e) => handleDirectoryComplianceFilterChange(e.target.value)}
+                                        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maroon-800 bg-white shadow-sm font-sans flex-1 md:flex-initial min-w-[150px]"
+                                    >
+                                        <option value="">All Compliance Statuses</option>
+                                        <option value="compliant">Fully Compliant</option>
+                                        <option value="in_progress">In Progress</option>
+                                        <option value="not_started">Not Started</option>
+                                    </select>
+                                )}
+                                {(directoryDeptFilter || directoryComplianceFilter || directorySearch) && (
+                                    <Button
+                                        value="Clear Filters"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            setDirectorySearch('');
+                                            setDirectoryDeptFilter('');
+                                            setDirectoryComplianceFilter('');
+                                            setDirectoryCurrentPage(1);
+                                        }}
+                                        className="text-slate-500 hover:text-maroon-800 text-xs px-3"
+                                    >
+                                        Clear
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
                         {currentDirectoryList.length === 0 ? (
                             <div className="p-8 text-center text-slate-500">
-                                <p>{searchQuery ? 'No faculty match your search.' : `No ${directoryTab} faculty members found.`}</p>
+                                <p>{directorySearch ? 'No faculty match your search.' : `No ${directoryTab} faculty members found.`}</p>
+                            </div>
+                        ) : directoryTab === 'rejected' ? (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm text-slate-600">
+                                    <thead className="bg-red-50 text-xs font-semibold uppercase tracking-wider text-red-800">
+                                        <tr>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-red-100/50 transition-colors group" onClick={() => handleDirectorySort('name')}>
+                                                <div className="flex items-center gap-1">
+                                                    Name
+                                                    {directorySortField === 'name' ? (
+                                                        directorySortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-red-800" /> : <ChevronDown className="h-3.5 w-3.5 text-red-800" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-red-100/50 transition-colors group" onClick={() => handleDirectorySort('email')}>
+                                                <div className="flex items-center gap-1">
+                                                    Email
+                                                    {directorySortField === 'email' ? (
+                                                        directorySortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-red-800" /> : <ChevronDown className="h-3.5 w-3.5 text-red-800" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-red-100/50 transition-colors group" onClick={() => handleDirectorySort('department')}>
+                                                <div className="flex items-center gap-1">
+                                                    Department
+                                                    {directorySortField === 'department' ? (
+                                                        directorySortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-red-800" /> : <ChevronDown className="h-3.5 w-3.5 text-red-800" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {currentDirectoryList.map((app) => (
+                                            <tr key={app.id} className="bg-white hover:bg-slate-50/50 transition-colors">
+                                                <td className="px-6 py-4 font-medium text-slate-900">{app.user.name}</td>
+                                                <td className="px-6 py-4 text-slate-600">{app.user.email}</td>
+                                                <td className="px-6 py-4 text-slate-700">{app.department?.name}</td>
+                                                <td className="px-6 py-4 text-right space-x-2">
+                                                    <Button variant="outline" size="sm" onClick={() => { post(route('admin.applications.re_review', app.id)); }} className="border-blue-200 text-blue-700 hover:bg-blue-50">
+                                                        <FileCheck className="h-4 w-4 mr-1.5" /> Re-review
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => { if (confirm('Permanently delete this application? This cannot be undone.')) router.delete(route('admin.applications.delete', app.id)); }} className="border-red-200 text-red-700 hover:bg-red-50">
+                                                        <Trash2 className="h-4 w-4 mr-1.5" /> Delete
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-sm text-slate-600">
                                     <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-700">
                                         <tr>
-                                            <th className="px-6 py-4">Faculty Member</th>
-                                            <th className="px-6 py-4">Department</th>
-                                            <th className="px-6 py-4">Compliance Status</th>
-                                            <th className="px-6 py-4">Progress</th>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group" onClick={() => handleDirectorySort('name')}>
+                                                <div className="flex items-center gap-1">
+                                                    Faculty Member
+                                                    {directorySortField === 'name' ? (
+                                                        directorySortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-slate-700" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-700" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group" onClick={() => handleDirectorySort('department')}>
+                                                <div className="flex items-center gap-1">
+                                                    Department
+                                                    {directorySortField === 'department' ? (
+                                                        directorySortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-slate-700" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-700" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group" onClick={() => handleDirectorySort('compliance_status')}>
+                                                <div className="flex items-center gap-1">
+                                                    Compliance Status
+                                                    {directorySortField === 'compliance_status' ? (
+                                                        directorySortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-slate-700" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-700" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group" onClick={() => handleDirectorySort('progress')}>
+                                                <div className="flex items-center gap-1">
+                                                    Progress
+                                                    {directorySortField === 'progress' ? (
+                                                        directorySortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-slate-700" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-700" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    )}
+                                                </div>
+                                            </th>
                                             <th className="px-6 py-4 text-right">Actions</th>
                                         </tr>
                                     </thead>
@@ -519,6 +1052,14 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                     </tbody>
                                 </table>
                             </div>
+                        )}
+                        {renderPagination(
+                            safeDirectoryCurrentPage,
+                            totalDirectoryPages,
+                            totalDirectoryCount,
+                            directoryPageSize,
+                            setDirectoryPageSize,
+                            setDirectoryCurrentPage
                         )}
                     </CardContent>
                 </Card>
@@ -769,7 +1310,7 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                             <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed italic">"{selectedFaculty.cover_message}"</p>
                                         </div>
                                     )}
-                                    <div className="flex gap-2 mt-4">
+                                    <div className="flex flex-wrap gap-2 mt-4">
                                         {selectedFaculty.cv_url && (
                                             <Button asChild className="bg-maroon-800 hover:bg-maroon-900 text-white flex-1">
                                                 <a href={selectedFaculty.cv_url} target="_blank" rel="noreferrer">
@@ -778,9 +1319,14 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                             </Button>
                                         )}
                                         {selectedFaculty.status === 'approved' && (
-                                            <Button variant="outline" onClick={() => confirmDeactivate(selectedFaculty.id)} disabled={processing && actionId === selectedFaculty.id} className="border-red-200 text-red-700 hover:bg-red-50">
-                                                <XCircle className="h-4 w-4 mr-2" /> Deactivate Account
-                                            </Button>
+                                            <>
+                                                <Button variant="outline" onClick={() => setShowResetPasswordModal(true)} className="border-amber-200 text-amber-700 hover:bg-amber-50">
+                                                    <KeyRound className="h-4 w-4 mr-2" /> Reset Password
+                                                </Button>
+                                                <Button variant="outline" onClick={() => confirmDeactivate(selectedFaculty.id)} disabled={processing && actionId === selectedFaculty.id} className="border-red-200 text-red-700 hover:bg-red-50">
+                                                    <XCircle className="h-4 w-4 mr-2" /> Deactivate Account
+                                                </Button>
+                                            </>
                                         )}
                                         {selectedFaculty.status === 'inactive' && (
                                             <Button variant="outline" onClick={() => handleReactivate(selectedFaculty.id)} disabled={processing && actionId === selectedFaculty.id} className="border-green-200 text-green-700 hover:bg-green-50">
@@ -797,6 +1343,9 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                                         { key: 'medical_certificates', label: 'Medical Certificates' },
                                         { key: 'clearances', label: 'Clearances' },
                                         { key: 'ids', label: 'Identification Documents (IDs)' },
+                                        { key: 'nbi_clearance', label: 'NBI Clearance' },
+                                        { key: 'government_ids', label: 'TIN / SSS / PhilHealth / Pag-IBIG' },
+                                        { key: 'employment_certificate', label: 'Certificate of Employment / Service Record' },
                                     ].map(({ key, label }) => {
                                         const docs = selectedFaculty.documents?.[key] || [];
                                         return (
@@ -1168,6 +1717,168 @@ export default function Dashboard({ applications, approvedFaculty, departments, 
                             <Button onClick={() => setShowImportResults(false)} className="bg-slate-800 hover:bg-slate-900 text-white">
                                 Close
                             </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Confirm Approve/Reject Modal ── */}
+            {confirmAction && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+                        <div className="flex items-start gap-4">
+                            <div className={`p-3 rounded-full shrink-0 ${confirmAction.type === 'approve' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                {confirmAction.type === 'approve' ? <BadgeCheck className="h-6 w-6" /> : <XCircle className="h-6 w-6" />}
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-serif font-bold text-slate-800">
+                                    {confirmAction.type === 'approve' ? 'Approve Application' : 'Reject Application'}
+                                </h3>
+                                <p className="text-sm text-slate-600 mt-1">
+                                    Are you sure you want to <strong>{confirmAction.type}</strong> the application from <strong>{confirmAction.name}</strong>?
+                                    {confirmAction.type === 'approve' && ' A temporary password will be generated for the faculty account.'}
+                                    {confirmAction.type === 'reject' && ' The applicant will be notified of the rejection.'}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-6">
+                            <Button variant="outline" onClick={() => setConfirmAction(null)}>Cancel</Button>
+                            <Button
+                                onClick={executeConfirmAction}
+                                disabled={processing}
+                                className={confirmAction.type === 'approve' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}
+                            >
+                                {processing ? 'Processing...' : confirmAction.type === 'approve' ? 'Yes, Approve' : 'Yes, Reject'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Reset Password Confirmation Modal ── */}
+            {showResetPasswordModal && selectedFaculty && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 rounded-full shrink-0 bg-amber-100 text-amber-700">
+                                <KeyRound className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-serif font-bold text-slate-800">Reset Password</h3>
+                                <p className="text-sm text-slate-600 mt-1">
+                                    Are you sure you want to reset the password for <strong>{selectedFaculty.user.name}</strong>?
+                                </p>
+                                <p className="text-xs text-slate-500 mt-2">
+                                    A new temporary password will be generated and the faculty member will be required to change it on their next login.
+                                </p>
+                            </div>
+                        </div>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            resetPasswordForm.post(route('admin.faculty.reset_password', selectedFaculty.id), {
+                                onSuccess: () => {
+                                    setShowResetPasswordModal(false);
+                                    setShowCredential(true);
+                                    setSelectedFaculty(null);
+                                    resetPasswordForm.reset();
+                                },
+                            });
+                        }} className="mt-5">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Enter your admin password to confirm</label>
+                                <Input
+                                    type="password"
+                                    placeholder="Your admin password"
+                                    value={resetPasswordForm.data.password}
+                                    onChange={e => resetPasswordForm.setData('password', e.target.value)}
+                                    autoFocus
+                                />
+                                {resetPasswordForm.errors.password && <p className="text-xs text-red-500 mt-1">{resetPasswordForm.errors.password}</p>}
+                            </div>
+                            <div className="flex justify-end gap-3 mt-5">
+                                <Button type="button" variant="outline" onClick={() => { setShowResetPasswordModal(false); resetPasswordForm.reset(); }}>Cancel</Button>
+                                <Button
+                                    type="submit"
+                                    disabled={resetPasswordForm.processing || !resetPasswordForm.data.password}
+                                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                                >
+                                    {resetPasswordForm.processing ? 'Resetting...' : 'Yes, Reset Password'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Batch Download Compliance Modal ── */}
+            {batchCheckResult && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[85vh]">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+                            <div className="flex items-start gap-3">
+                                <div className={`p-2.5 rounded-full shrink-0 ${batchCheckResult.incomplete.length === 0 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                    <FolderDown className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-serif font-bold text-slate-800">Batch Download — Compliance Check</h3>
+                                    <p className="text-sm text-slate-500 mt-0.5">
+                                        {batchCheckResult.compliant} of {batchCheckResult.total} faculty fully compliant
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={() => setBatchCheckResult(null)} className="text-slate-400 hover:text-slate-700">
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="overflow-y-auto flex-1 p-6">
+                            {batchCheckResult.incomplete.length === 0 ? (
+                                <div className="text-center py-6">
+                                    <div className="bg-green-100 text-green-700 rounded-full p-4 w-fit mx-auto mb-4">
+                                        <CheckCircle2 className="h-8 w-8" />
+                                    </div>
+                                    <h4 className="font-semibold text-green-800 text-lg">All Faculty Are Compliant!</h4>
+                                    <p className="text-sm text-slate-500 mt-1">All {batchCheckResult.total} faculty members have uploaded all required documents. Ready to download.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                        <p className="text-sm text-amber-800 font-medium">
+                                            <AlertCircle className="h-4 w-4 inline mr-1.5 -mt-0.5" />
+                                            {batchCheckResult.incomplete.length} faculty member{batchCheckResult.incomplete.length > 1 ? 's have' : ' has'} missing documents. Only fully compliant faculty will be included in the download.
+                                        </p>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {batchCheckResult.incomplete.map((item, idx) => (
+                                            <div key={idx} className="border border-slate-200 rounded-lg p-3">
+                                                <p className="font-semibold text-slate-800 text-sm">{item.name}</p>
+                                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                                    {item.missing.map((doc, i) => (
+                                                        <span key={i} className="inline-flex items-center text-xs bg-red-50 text-red-700 border border-red-200 rounded-full px-2.5 py-0.5">
+                                                            <FileMinus className="h-3 w-3 mr-1" />{doc}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-6 pt-3 border-t border-slate-100 flex justify-end gap-3 shrink-0">
+                            <Button variant="outline" onClick={() => setBatchCheckResult(null)}>Close</Button>
+                            {batchCheckResult.compliant > 0 && (
+                                <Button
+                                    asChild
+                                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                                >
+                                    <a href={route('admin.faculty.batch_download')}>
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Download {batchCheckResult.compliant} Compliant ({batchCheckResult.compliant === batchCheckResult.total ? 'All' : `of ${batchCheckResult.total}`})
+                                    </a>
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>

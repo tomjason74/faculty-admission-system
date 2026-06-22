@@ -167,6 +167,7 @@ class BulkImportController extends Controller
                 'name'     => $name,
                 'email'    => $email,
                 'password' => Hash::make($tempPassword),
+                'must_change_password' => true,
             ]);
             $user->assignRole('faculty');
 

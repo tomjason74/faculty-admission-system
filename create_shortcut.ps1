@@ -19,7 +19,7 @@ try {
 
 $WshShell = New-Object -comObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut("c:\Users\Tom Jason\Desktop\Faculty Admission System.lnk")
-$Shortcut.TargetPath = "c:\Users\Tom Jason\Desktop\Faculty-Admission-System\start_system.bat"
-$Shortcut.WorkingDirectory = "c:\Users\Tom Jason\Desktop\Faculty-Admission-System"
+$Shortcut.TargetPath = "c:\Users\Tom Jason\Desktop\School\Masteral\Faculty-Admission-System\start_system_silent.vbs"
+$Shortcut.WorkingDirectory = "c:\Users\Tom Jason\Desktop\School\Masteral\Faculty-Admission-System"
 $Shortcut.IconLocation = $iconPath
 $Shortcut.Save()

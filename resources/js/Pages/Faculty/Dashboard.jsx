@@ -12,6 +12,9 @@ export default function Dashboard({ profile, documents, classRecords }) {
         { key: 'medical_certificates', label: 'Medical Certificates' },
         { key: 'clearances', label: 'Clearances' },
         { key: 'ids', label: 'Identification Documents (IDs)' },
+        { key: 'nbi_clearance', label: 'NBI Clearance' },
+        { key: 'government_ids', label: 'TIN / SSS / PhilHealth / Pag-IBIG' },
+        { key: 'employment_certificate', label: 'Certificate of Employment / Service Record' },
     ];
 
     const [showEditModal, setShowEditModal] = useState(false);
@@ -446,28 +449,7 @@ export default function Dashboard({ profile, documents, classRecords }) {
                                     />
                                 </div>
 
-                                <div className="border-t border-slate-100 pt-4 mt-2 space-y-3">
-                                    <h4 className="text-sm font-semibold text-slate-800 border-b border-slate-200 pb-2 font-serif">Semester Evaluations</h4>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {[
-                                            ['2023-2024 Sem 1', 'eval_2324_sem1'],
-                                            ['2023-2024 Sem 2', 'eval_2324_sem2'],
-                                            ['2024-2025 Sem 1', 'eval_2425_sem1'],
-                                            ['2024-2025 Sem 2', 'eval_2425_sem2'],
-                                        ].map(([label, field]) => (
-                                            <div key={field}>
-                                                <span className="text-xs text-slate-500 font-semibold">{label} Rating</span>
-                                                <Input
-                                                    type="text"
-                                                    placeholder="e.g. Very Satisfactory"
-                                                    value={editForm[field]}
-                                                    onChange={e => setEditForm(prev => ({ ...prev, [field]: e.target.value }))}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
                                 </div>
-                            </div>
                         </form>
                         <div className="p-6 pt-0 flex justify-end gap-3 shrink-0">
                             <Button variant="outline" onClick={() => setShowEditModal(false)}>Cancel</Button>

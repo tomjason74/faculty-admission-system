@@ -37,9 +37,11 @@ class ApplicationPortalTest extends TestCase
         $response = $this->post('/apply', [
             'name' => 'Jane Doe',
             'email' => 'jane@example.com',
+            'phone' => '09123456789',
             'degree' => 'Ph.D. in AI',
             'specialization' => 'Machine Learning',
             'department_id' => $department->id,
+            'employment_type' => 'full-time',
             'cv_file' => UploadedFile::fake()->create('resume.pdf', 100, 'application/pdf'),
         ]);
 
@@ -51,7 +53,7 @@ class ApplicationPortalTest extends TestCase
         ]);
 
         $user = User::where('email', 'jane@example.com')->first();
-        $this->assertTrue($user->hasRole('faculty'));
+        $this->assertFalse($user->hasRole('faculty')); // Roles are assigned upon approval, not submission
 
         $this->assertDatabaseHas('faculty_profiles', [
             'user_id' => $user->id,

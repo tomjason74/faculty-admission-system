@@ -360,17 +360,17 @@ export default function RenewalReport({ faculty, departments, signatories = [] }
                                 <table className="w-full border-collapse border border-black text-left text-[9pt] table-fixed">
                                     <thead>
                                         <tr className="border-b border-black">
-                                            <th className="border border-black px-2 py-1.5 font-bold text-center w-[25%] whitespace-normal break-words" rowSpan={2}>Name</th>
-                                            <th className="border border-black px-2 py-1 font-bold text-center w-[15%] whitespace-normal break-words" colSpan={2}>Enrolled in Master's/Doctoral</th>
-                                            <th className="border border-black px-2 py-1.5 font-bold text-center w-[20%] whitespace-normal break-words" rowSpan={2}>Name of School</th>
+                                            <th className="border border-black px-2 py-1.5 font-bold text-center w-[22%] whitespace-normal break-words" rowSpan={2}>Name</th>
+                                            <th className="border border-black px-1 py-1 font-bold text-center w-[18%] whitespace-normal break-words" colSpan={2}>Enrolled in Master's/Doctoral</th>
+                                            <th className="border border-black px-2 py-1.5 font-bold text-center w-[17%] whitespace-normal break-words" rowSpan={2}>Name of School</th>
                                             <th className="border border-black px-2 py-1.5 font-bold text-center w-[15%] whitespace-normal break-words" rowSpan={2}>Program</th>
-                                            <th className="border border-black px-2 py-1 font-bold text-center w-[25%] whitespace-normal break-words" colSpan={3}>Evaluation Rating</th>
+                                            <th className="border border-black px-2 py-1 font-bold text-center w-[28%] whitespace-normal break-words" colSpan={3}>Evaluation Rating</th>
                                         </tr>
                                         <tr className="border-b border-black">
-                                            <th className="border border-black px-1 py-1 text-xs font-bold text-center w-[7.5%] whitespace-normal break-words">Yes</th>
-                                            <th className="border border-black px-1 py-1 text-xs font-bold text-center w-[7.5%] whitespace-normal break-words">No</th>
+                                            <th className="border border-black px-1 py-1 text-xs font-bold text-center w-[9%] whitespace-normal break-words">Yes</th>
+                                            <th className="border border-black px-1 py-1 text-xs font-bold text-center w-[9%] whitespace-normal break-words">No</th>
                                             {evalSemesters.map(sem => (
-                                                <th key={sem.id} className="border border-black px-1 py-1 text-center font-bold text-[8.5pt] leading-tight w-[8.3%] whitespace-normal break-words">{sem.label}</th>
+                                                <th key={sem.id} className="border border-black px-1 py-1 text-center font-bold text-[8.5pt] leading-tight w-[9.3%] whitespace-normal break-words">{sem.label}</th>
                                             ))}
                                         </tr>
                                     </thead>

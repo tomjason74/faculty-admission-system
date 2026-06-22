@@ -56,7 +56,7 @@ class ApplicationController extends Controller
 
         if ($request->hasFile('cv_file')) {
             $profile->addMediaFromRequest('cv_file')
-                ->toMediaCollection('cv', 'local');
+                ->toMediaCollection('cv', env('MEDIA_DISK', 'local'));
         }
 
         Mail::to($user->email)->send(new ApplicationReceived(

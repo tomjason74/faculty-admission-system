@@ -35,16 +35,20 @@ class FacultyProfile extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('cv')->useDisk('local')->singleFile();
-        $this->addMediaCollection('medical_certificates')->useDisk('local')->singleFile();
-        $this->addMediaCollection('clearances')->useDisk('local')->singleFile();
-        $this->addMediaCollection('ids')->useDisk('local')->singleFile();
-        $this->addMediaCollection('class_records')->useDisk('local');
+        $disk = env('MEDIA_DISK', 'local');
+        $this->addMediaCollection('cv')->useDisk($disk)->singleFile();
+        $this->addMediaCollection('medical_certificates')->useDisk($disk);
+        $this->addMediaCollection('clearances')->useDisk($disk);
+        $this->addMediaCollection('ids')->useDisk($disk);
+        $this->addMediaCollection('nbi_clearance')->useDisk($disk);
+        $this->addMediaCollection('government_ids')->useDisk($disk);
+        $this->addMediaCollection('employment_certificate')->useDisk($disk);
+        $this->addMediaCollection('class_records')->useDisk($disk);
     }
 
     public function getIsCompliantAttribute(): bool
     {
-        $requiredCollections = ['medical_certificates', 'clearances', 'ids'];
+        $requiredCollections = ['medical_certificates', 'clearances', 'ids', 'nbi_clearance', 'government_ids', 'employment_certificate'];
         foreach ($requiredCollections as $collection) {
             if ($this->getMedia($collection)->count() === 0) {
                 return false;
@@ -55,7 +59,7 @@ class FacultyProfile extends Model implements HasMedia
 
     public function getCompliancePercentageAttribute(): int
     {
-        $requiredCollections = ['medical_certificates', 'clearances', 'ids'];
+        $requiredCollections = ['medical_certificates', 'clearances', 'ids', 'nbi_clearance', 'government_ids', 'employment_certificate'];
         $filled = 0;
         foreach ($requiredCollections as $collection) {
             if ($this->getMedia($collection)->count() > 0) {
