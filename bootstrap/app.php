@@ -24,5 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->report(function (\Throwable $e) {
+            error_log('DEBUG_FATAL_ERROR: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+        });
     })->create();
