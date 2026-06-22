@@ -62,13 +62,9 @@ RUN composer dump-autoload --no-dev --optimize --no-scripts --ignore-platform-re
 # Ensure correct permissions for Laravel storage and cache directories
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
 
-# Copy entrypoint script and make it executable
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 # Expose standard production port
 ENV PORT=8080
 EXPOSE 8080
 
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["frankenphp", "php-server", "--port", "8080", "--public-dir", "public"]
+ENTRYPOINT []
+CMD php artisan config:clear && php artisan route:cache && php artisan view:cache && php artisan migrate --force && frankenphp php-server --port 8080 --public-dir public
