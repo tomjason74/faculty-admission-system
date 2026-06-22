@@ -48,7 +48,7 @@ RUN echo "upload_max_filesize=15M" > $PHP_INI_DIR/conf.d/uploads.ini \
 
 # Copy PHP dependencies first for layer caching
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
 
 # Copy the application source code
 COPY . .
