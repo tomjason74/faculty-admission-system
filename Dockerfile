@@ -57,7 +57,7 @@ COPY . .
 COPY --from=asset-builder /app/public/build ./public/build
 
 # Finish autoloader optimization
-RUN composer dump-autoload --no-dev --optimize
+RUN composer dump-autoload --no-dev --optimize --no-scripts --ignore-platform-reqs
 
 # Ensure correct permissions for Laravel storage and cache directories
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
