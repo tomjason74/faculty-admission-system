@@ -108,9 +108,8 @@ class ApplicationController extends Controller
             $tempPassword
         ));
 
-        // Save to project root for easy access
-        $logFile = base_path('credentials.txt');
-        file_put_contents($logFile, "Approved Email: {$facultyProfile->user->email} | Password: {$tempPassword}\n", FILE_APPEND);
+        // Save to project root/storage safely
+        $this->logCredentials("Approved Email: {$facultyProfile->user->email} | Password: {$tempPassword}");
 
         return redirect()->back()->with('credential', [
             'name'     => $facultyProfile->user->name,
@@ -177,9 +176,8 @@ class ApplicationController extends Controller
             'teaching_load_status' => $validated['teaching_load_status'] ?? null,
         ]);
 
-        // Save to project root for easy access
-        $logFile = base_path('credentials.txt');
-        file_put_contents($logFile, "Created Email: {$validated['email']} | Password: {$tempPassword}\n", FILE_APPEND);
+        // Save to project root/storage safely
+        $this->logCredentials("Created Email: {$validated['email']} | Password: {$tempPassword}");
 
         return redirect()->back()->with('credential', [
             'name'     => $validated['name'],
@@ -317,8 +315,7 @@ class ApplicationController extends Controller
             'must_change_password' => true,
         ]);
 
-        $logFile = base_path('credentials.txt');
-        file_put_contents($logFile, "Reset Email: {$facultyProfile->user->email} | Password: {$tempPassword}\n", FILE_APPEND);
+        $this->logCredentials("Reset Email: {$facultyProfile->user->email} | Password: {$tempPassword}");
 
         return redirect()->back()->with('credential', [
             'name'     => $facultyProfile->user->name,

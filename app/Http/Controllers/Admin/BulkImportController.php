@@ -86,13 +86,42 @@ class BulkImportController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+            'file' => 'required|file|max:10240',
         ]);
 
         $file = $request->file('file');
-        $spreadsheet = IOFactory::load($file->getPathname());
+
+        try {
+            $spreadsheet = IOFactory::load($file->getPathname());
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors([
+                'file' => 'The uploaded file is not a valid Excel file. Please download the template and try again.'
+            ]);
+        }
+
         $sheet = $spreadsheet->getActiveSheet();
         $rows = $sheet->toArray(null, true, true, true);
+
+        // Check if file is empty or headers do not match
+        $headerRow = $rows[1] ?? [];
+        $expectedHeaders = ['Name', 'Email', 'Department', 'Degree', 'Specialization', 'Employment Type'];
+        $headerKeys = ['A', 'B', 'C', 'D', 'E', 'F'];
+        $headersValid = true;
+
+        foreach ($headerKeys as $index => $key) {
+            $expected = strtolower($expectedHeaders[$index]);
+            $actual = strtolower(trim($headerRow[$key] ?? ''));
+            if ($actual !== $expected) {
+                $headersValid = false;
+                break;
+            }
+        }
+
+        if (!$headersValid) {
+            return redirect()->back()->withErrors([
+                'file' => 'The uploaded file does not match the required template format. Please download and use the correct template.'
+            ]);
+        }
 
         $departments = Department::all()->keyBy(function ($dept) {
             return strtolower(trim($dept->name));
@@ -181,8 +210,7 @@ class BulkImportController extends Controller
             ]);
 
             // Log credentials
-            $logFile = base_path('credentials.txt');
-            file_put_contents($logFile, "Imported Email: {$email} | Password: {$tempPassword}\n", FILE_APPEND);
+            $this->logCredentials("Imported Email: {$email} | Password: {$tempPassword}");
 
             $created[] = [
                 'row'      => $rowNumber,
