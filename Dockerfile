@@ -63,9 +63,9 @@ COPY --from=asset-builder /app/public/build ./public/build
 # Finish autoloader optimization
 RUN composer dump-autoload --no-dev --optimize --no-scripts --ignore-platform-reqs
 
-# Ensure correct permissions for Laravel storage and cache directories (Apache runs as www-data)
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Ensure correct permissions for Laravel directories (Apache runs as www-data)
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
 
-# Reset Entrypoint and run migrations & caching on boot, then start Apache in foreground
+# Reset Entrypoint, run caching and migrations on boot, normalize permissions, and start Apache
 ENTRYPOINT []
-CMD php artisan config:clear && php artisan route:cache && php artisan view:cache && php artisan migrate --force && apache2-foreground
+CMD php artisan config:clear && php artisan route:cache && php artisan view:cache && php artisan migrate --force && chown -R www-data:www-data /var/www/html/database /var/www/html/storage && apache2-foreground
